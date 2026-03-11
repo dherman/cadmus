@@ -2,8 +2,10 @@ pub mod api;
 
 use dashmap::DashMap;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use uuid::Uuid;
-use yrs::Doc;
+use yrs::{sync::Awareness, Doc};
+use yrs_axum::{broadcast::BroadcastGroup, AwarenessRef};
 
 /// Manages in-memory document sessions.
 ///
@@ -17,11 +19,21 @@ pub struct SessionManager {
 /// An active document editing session.
 pub struct DocumentSession {
     pub doc_id: Uuid,
-    pub doc: tokio::sync::RwLock<Doc>,
-    // TODO: Add BroadcastGroup from yrs-axum
-    // TODO: Add Awareness
-    // TODO: Add flush state tracking (last flush time, pending update count)
-    // TODO: Add connected client count
+    pub awareness: AwarenessRef,
+    pub broadcast_group: Arc<BroadcastGroup>,
+}
+
+impl DocumentSession {
+    pub async fn new(doc_id: Uuid) -> Arc<Self> {
+        let doc = Doc::new();
+        let awareness = Arc::new(RwLock::new(Awareness::new(doc)));
+        let broadcast_group = Arc::new(BroadcastGroup::new(awareness.clone(), 32).await);
+        Arc::new(Self {
+            doc_id,
+            awareness,
+            broadcast_group,
+        })
+    }
 }
 
 impl SessionManager {
@@ -40,13 +52,7 @@ impl SessionManager {
 
         // TODO: Load document state from S3 + update log
         // For now, create an empty document
-        let doc = Doc::new();
-
-        let session = Arc::new(DocumentSession {
-            doc_id,
-            doc: tokio::sync::RwLock::new(doc),
-        });
-
+        let session = DocumentSession::new(doc_id).await;
         self.sessions.insert(doc_id, session.clone());
         session
     }
