@@ -112,7 +112,7 @@
 
 - [x] `cargo build` succeeds
 - [x] `cargo test` passes all integration tests, including the two-client sync test
-- [ ] Start the server (`cargo run`), open two browser tabs to a test page (or use `websocat`), and confirm sync works manually
+- [x] Start the server (`cargo run`), open two browser tabs to a test page (or use `websocat`), and confirm sync works manually
 - [x] `curl http://localhost:8080/health` returns `{"status": "ok"}`
 
 ## Files Created/Modified
