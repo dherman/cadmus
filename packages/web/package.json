@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@cadmus/doc-schema": "*",
+    "@cadmus/doc-schema": "workspace:*",
     "@tiptap/core": "^3.7.0",
     "@tiptap/react": "^3.7.0",
     "@tiptap/starter-kit": "^3.7.0",

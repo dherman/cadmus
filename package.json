@@ -2,19 +2,14 @@
   "name": "cadmus",
   "private": true,
   "license": "MIT",
-  "workspaces": [
-    "packages/doc-schema",
-    "packages/sidecar",
-    "packages/web",
-    "packages/cli"
-  ],
   "scripts": {
-    "build:schema": "npm run build -w packages/doc-schema",
-    "dev:web": "npm run dev -w packages/web",
-    "dev:sidecar": "npm run dev -w packages/sidecar",
-    "test": "npm test --workspaces --if-present"
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint"
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "packageManager": "pnpm@9.15.4"
 }

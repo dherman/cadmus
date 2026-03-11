@@ -3,22 +3,39 @@
   "version": "0.1.0",
   "license": "MIT",
   "description": "Shared document schema for Cadmus — single source of truth for Tiptap extensions and markdown serialization",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": ["dist"],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@tiptap/core": "^3.7.0",
-    "@tiptap/starter-kit": "^3.7.0",
     "@tiptap/extension-image": "^3.7.0",
     "@tiptap/markdown": "^3.7.0",
-    "@tiptap/pm": "^3.7.0"
+    "@tiptap/pm": "^3.7.0",
+    "@tiptap/starter-kit": "^3.7.0"
   },
   "devDependencies": {
+    "jsdom": "^25.0.0",
+    "tsup": "^8.0.0",
     "typescript": "^5.4.0",
     "vitest": "^2.0.0"
   }

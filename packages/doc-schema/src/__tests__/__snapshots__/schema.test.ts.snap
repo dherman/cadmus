@@ -1,0 +1,63 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`doc-schema > schema spec snapshot 1`] = `
+{
+  "marks": [
+    "bold",
+    "code",
+    "italic",
+    "link",
+    "strike",
+  ],
+  "nodes": {
+    "blockquote": {
+      "content": "block+",
+      "group": "block",
+    },
+    "bulletList": {
+      "content": "listItem+",
+      "group": "block list",
+    },
+    "codeBlock": {
+      "content": "text*",
+      "group": "block",
+    },
+    "doc": {
+      "content": "block+",
+      "group": null,
+    },
+    "hardBreak": {
+      "content": null,
+      "group": "inline",
+    },
+    "heading": {
+      "content": "inline*",
+      "group": "block",
+    },
+    "horizontalRule": {
+      "content": null,
+      "group": "block",
+    },
+    "image": {
+      "content": null,
+      "group": "block",
+    },
+    "listItem": {
+      "content": "paragraph block*",
+      "group": null,
+    },
+    "orderedList": {
+      "content": "listItem+",
+      "group": "block list",
+    },
+    "paragraph": {
+      "content": "inline*",
+      "group": "block",
+    },
+    "text": {
+      "content": null,
+      "group": "inline",
+    },
+  },
+}
+`;

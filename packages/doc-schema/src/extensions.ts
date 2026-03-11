@@ -49,6 +49,12 @@ export function createExtensions(options: {
       codeBlock: {
         languageClassPrefix: 'language-',
       },
+
+      // Link is included in StarterKit v3
+      link: {
+        openOnClick: false,   // Don't navigate on click — editor, not reader
+        autolink: true,       // Auto-detect URLs as you type
+      },
     }),
 
     Image.configure({
