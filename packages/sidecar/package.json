@@ -6,9 +6,7 @@
   "description": "Stateless markdown↔JSON conversion service",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "@cadmus/doc-schema": "workspace:*",
