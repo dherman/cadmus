@@ -24,7 +24,7 @@ pub struct WsQuery {
 pub async fn ws_upgrade(
     ws: WebSocketUpgrade,
     Path(doc_id): Path<Uuid>,
-    Query(query): Query<WsQuery>,
+    Query(_query): Query<WsQuery>,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     // TODO: Validate JWT from query.token

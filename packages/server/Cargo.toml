@@ -13,7 +13,7 @@ tower-http = { version = "0.5", features = ["cors", "trace"] }
 
 # Yrs (Yjs Rust port) and sync protocol
 yrs = "0.21"
-yrs-axum = "0.1"
+yrs-axum = "0.8"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
