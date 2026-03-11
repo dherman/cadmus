@@ -79,11 +79,11 @@ This PR should verify that all schema node types render correctly in the editor.
 
 ## Dependencies
 
-| Package | Purpose |
-|---------|---------|
-| `react`, `react-dom` | UI framework |
-| `@tiptap/react` | React bindings for Tiptap |
-| `@tiptap/pm` | ProseMirror peer dependency |
-| `@cadmus/doc-schema` | Shared schema (workspace dependency) |
-| `vite`, `@vitejs/plugin-react` | Build tooling |
-| `typescript` | Type checking |
+| Package                        | Purpose                              |
+| ------------------------------ | ------------------------------------ |
+| `react`, `react-dom`           | UI framework                         |
+| `@tiptap/react`                | React bindings for Tiptap            |
+| `@tiptap/pm`                   | ProseMirror peer dependency          |
+| `@cadmus/doc-schema`           | Shared schema (workspace dependency) |
+| `vite`, `@vitejs/plugin-react` | Build tooling                        |
+| `typescript`                   | Type checking                        |

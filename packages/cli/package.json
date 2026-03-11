@@ -7,7 +7,6 @@
     "cadmus": "./dist/main.js"
   },
   "scripts": {
-    "build": "tsc",
     "dev": "tsx src/main.ts"
   },
   "dependencies": {

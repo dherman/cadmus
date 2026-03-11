@@ -24,14 +24,14 @@ This is the foundational milestone for Cadmus. It proves out the core technology
 
 The milestone is divided into six PRs, ordered by dependency. Each PR is independently mergeable and produces a testable artifact.
 
-| PR | Title | Depends On | Estimated Effort |
-|----|-------|------------|------------------|
-| 1 | [Project Scaffolding & Shared Schema Package](prs/01-project-scaffolding-and-schema/) | — | 1–2 days |
-| 2 | [Rust WebSocket Server](prs/02-rust-websocket-server/) | PR 1 (schema types) | 2–3 days |
-| 3 | [React Editor Foundation](prs/03-react-editor-foundation/) | PR 1 (schema package) | 1–2 days |
-| 4 | [Collaborative Sync Integration](prs/04-collaborative-sync/) | PR 2 + PR 3 | 1–2 days |
-| 5 | [Editor Toolbar](prs/05-editor-toolbar/) | PR 3 | 1 day |
-| 6 | [Awareness & Cursors](prs/06-awareness-and-cursors/) | PR 4 | 1 day |
+| PR  | Title                                                                                 | Depends On            | Estimated Effort |
+| --- | ------------------------------------------------------------------------------------- | --------------------- | ---------------- |
+| 1   | [Project Scaffolding & Shared Schema Package](prs/01-project-scaffolding-and-schema/) | —                     | 1–2 days         |
+| 2   | [Rust WebSocket Server](prs/02-rust-websocket-server/)                                | PR 1 (schema types)   | 2–3 days         |
+| 3   | [React Editor Foundation](prs/03-react-editor-foundation/)                            | PR 1 (schema package) | 1–2 days         |
+| 4   | [Collaborative Sync Integration](prs/04-collaborative-sync/)                          | PR 2 + PR 3           | 1–2 days         |
+| 5   | [Editor Toolbar](prs/05-editor-toolbar/)                                              | PR 3                  | 1 day            |
+| 6   | [Awareness & Cursors](prs/06-awareness-and-cursors/)                                  | PR 4                  | 1 day            |
 
 PRs 3 and 5 can be developed in parallel with PR 2. PR 6 depends on the sync integration from PR 4.
 

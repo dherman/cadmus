@@ -3,7 +3,7 @@ pub mod api;
 use dashmap::DashMap;
 use std::sync::Arc;
 use uuid::Uuid;
-use yrs::{Doc, updates::decoder::Decode, Update};
+use yrs::Doc;
 
 /// Manages in-memory document sessions.
 ///

@@ -26,6 +26,7 @@
   - Export a function `destroyCollaborationProvider(provider)` that disconnects and cleans up
   - Export a constant `DEFAULT_DOC_ID = 'default'` (matching the server's pre-seeded document)
 - [ ] Create `web/src/useCollaboration.ts` — a React hook:
+
   ```typescript
   export function useCollaboration(docId: string) {
     // Creates ydoc + provider on mount, destroys on unmount.
@@ -33,6 +34,7 @@
     // Tracks connection state via provider status events.
   }
   ```
+
   - Use `useEffect` for setup/teardown
   - Use `useState` for `isConnected`, updated via the provider's `'status'` event
 

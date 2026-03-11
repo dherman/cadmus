@@ -13,6 +13,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 **Goal:** Two browser tabs collaboratively editing the same document in real time.
 
 **Deliverables:**
+
 - Shared `doc-schema` package with launch schema (StarterKit minus Underline, plus Image, plus Markdown extension)
 - Rust server (Axum) with Yrs WebSocket handler using `yrs-axum` BroadcastGroup
 - No auth — any connection gets full edit access
@@ -32,6 +33,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 **Goal:** Documents survive server restarts. Multiple documents.
 
 **Deliverables:**
+
 - PostgreSQL schema: `documents`, `document_permissions`, `update_log` tables
 - S3 storage for compacted Yrs snapshots
 - Document session manager: load on first connect, periodic flush (5s inactivity / N updates), unload after disconnect + 60s grace
@@ -49,6 +51,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 **Goal:** Multi-user system with granular document permissions.
 
 **Deliverables:**
+
 - User auth (email/password + JWT, or OAuth provider)
 - WebSocket token flow: `POST /api/auth/ws-token` → short-lived JWT, validated on WS upgrade
 - Custom `PermissionedProtocol` in Rust: gates Yjs Update messages by role (Read/Comment/Edit)
@@ -66,6 +69,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 **Goal:** Proven markdown↔JSON conversion pipeline via the sidecar.
 
 **Deliverables:**
+
 - Node sidecar service: HTTP server importing `@cadmus/doc-schema`, exposing `/serialize`, `/parse`, `/diff`, `/health`
 - Deployed as second container in ECS task definition
 - REST endpoint: `GET /api/docs/{id}/content?format=markdown`
@@ -84,6 +88,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 **Goal:** Anchored comments with threading, at rough parity with Google Docs.
 
 **Deliverables:**
+
 - Comments table in Postgres (anchors stored as Yjs RelativePositions)
 - REST endpoints: create, reply, edit own, resolve, unresolve
 - WebSocket comment event broadcasting via y-sync custom messages
@@ -103,6 +108,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 **Goal:** Non-browser clients can read, write, and comment on documents.
 
 **Deliverables:**
+
 - Agent token management: create, list, revoke scoped API tokens
 - Content read endpoint (already exists from M4, now behind proper auth)
 - Full-markdown-push endpoint: `POST /api/docs/{id}/content` with base_version, sidecar diffing, Yrs translation
@@ -124,6 +130,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 **Goal:** Organizational hierarchy and admin controls.
 
 **Deliverables:**
+
 - Organization and workspace data model
 - Org-level default permissions for documents
 - Admin controls for agent tokens: scope allowlists, lifetime caps, disable BYO
@@ -141,6 +148,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 **Goal:** User-facing document history and version comparison.
 
 **Deliverables:**
+
 - Version listing endpoint: `GET /api/docs/{id}/versions` with author attribution
 - Diff endpoint: `GET /api/docs/{id}/diff` (two versions → markdown diff via sidecar)
 - Named checkpoints: users can label versions
@@ -154,11 +162,13 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 ## If Time Is Tight
 
 **Cut or compress:**
+
 - History UI (M8) — data is being stored from M2 onward; UI can come later.
 - Enterprise controls (M7) — start with minimal org model, defer audit logging.
 - Targeted edits API (Pattern 2) — ship with full-markdown-push only.
 
 **Do not cut:**
+
 - The sidecar (M4) and CLI (M6) — the local tooling story is a key differentiator.
 - The comments (M5) — core collaboration feature expected by users.
 

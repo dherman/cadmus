@@ -10,6 +10,7 @@
 ### Step 1: Set Up Cargo Project
 
 - [ ] Update `server/Cargo.toml` with proper metadata and dependencies:
+
   ```toml
   [package]
   name = "cadmus-server"
@@ -28,7 +29,9 @@
   serde = { version = "1", features = ["derive"] }
   serde_json = "1"
   ```
+
   (Pin exact versions after verifying compatibility; the versions above are indicative.)
+
 - [ ] Verify `cargo check` passes
 
 ### Step 2: Application State and Document Session
@@ -100,7 +103,7 @@
     server:
       build: ./server
       ports:
-        - "8080:8080"
+        - '8080:8080'
       environment:
         - RUST_LOG=info
   ```

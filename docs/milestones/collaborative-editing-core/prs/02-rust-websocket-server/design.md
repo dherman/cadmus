@@ -68,21 +68,21 @@ No authentication, no token validation, no permission checks. These are added in
 
 Environment variables with sensible defaults:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `HOST` | `0.0.0.0` | Bind address |
-| `PORT` | `8080` | Listen port |
-| `RUST_LOG` | `info` | Log level (via `tracing`) |
+| Variable   | Default   | Description               |
+| ---------- | --------- | ------------------------- |
+| `HOST`     | `0.0.0.0` | Bind address              |
+| `PORT`     | `8080`    | Listen port               |
+| `RUST_LOG` | `info`    | Log level (via `tracing`) |
 
 ## Dependencies
 
-| Crate | Purpose |
-|-------|---------|
-| `axum` | HTTP/WebSocket framework |
-| `tokio` | Async runtime |
-| `yrs` | Yrs CRDT library |
-| `yrs-axum` | WebSocket sync integration |
-| `dashmap` | Concurrent document map |
-| `tower-http` | CORS middleware |
-| `tracing` / `tracing-subscriber` | Structured logging |
-| `serde` / `serde_json` | JSON serialization for health endpoint |
+| Crate                            | Purpose                                |
+| -------------------------------- | -------------------------------------- |
+| `axum`                           | HTTP/WebSocket framework               |
+| `tokio`                          | Async runtime                          |
+| `yrs`                            | Yrs CRDT library                       |
+| `yrs-axum`                       | WebSocket sync integration             |
+| `dashmap`                        | Concurrent document map                |
+| `tower-http`                     | CORS middleware                        |
+| `tracing` / `tracing-subscriber` | Structured logging                     |
+| `serde` / `serde_json`           | JSON serialization for health endpoint |

@@ -10,7 +10,7 @@ Real-time collaboration uses the standard Yjs sync protocol (y-sync) over WebSoc
 
 1. Client obtains a short-lived JWT from `POST /api/auth/ws-token` (standard REST auth).
 2. Client opens WebSocket to `wss://{host}/api/docs/{doc_id}/ws?token={jwt}`.
-3. Server validates the JWT in the Axum handler *before* upgrading the connection. Invalid token → 401, no upgrade.
+3. Server validates the JWT in the Axum handler _before_ upgrading the connection. Invalid token → 401, no upgrade.
 4. From the JWT claims, the server determines: user ID, permission level (Read/Comment/Edit), whether the client is an agent (plus `agent_id` if so).
 5. Server upgrades the connection and attaches the client to the document's `BroadcastGroup`.
 
@@ -46,7 +46,7 @@ Implemented via a custom `Protocol` trait in Rust that wraps `DefaultProtocol`:
 - **Edit only:** can send Update messages (document edits). Read and Comment users' Update messages are rejected (server sends `Auth(denied)` or silently drops).
 - **Comment and Edit:** can receive `Custom(CommentEvent)` notifications. Comment creation/mutation happens over REST, not the CRDT.
 
-Key insight: permission enforcement happens on *incoming* messages, not outgoing. All clients receive the full update stream.
+Key insight: permission enforcement happens on _incoming_ messages, not outgoing. All clients receive the full update stream.
 
 ### Layer 5: Comment Notifications
 
@@ -67,17 +67,20 @@ The client-side `y-websocket` provider handles reconnection with exponential bac
 The server maintains an in-memory map of active document sessions: `DashMap<DocId, Arc<DocumentSession>>`.
 
 ### DocumentSession contains:
+
 - Yrs `Doc` instance (the authoritative CRDT state)
 - `Awareness` instance
 - `BroadcastGroup` managing connected client subscriptions
 - Metadata: connected client count, last activity timestamp, flush state
 
 ### Lifecycle:
+
 1. **Load:** First client connects → load Yrs state from S3 (compacted snapshot) + apply any un-compacted updates from the update log. Initialize `BroadcastGroup`.
 2. **Flush:** Periodically (every 5 seconds of inactivity or every N updates), compact the Yrs document and write the snapshot to S3. Append raw updates to the update log between compactions.
 3. **Unload:** Last client disconnects → start a 60-second grace timer. If no reconnection, flush final state and drop the session from memory.
 
 ### Persistence strategy (prototype):
+
 - **Write-behind:** Updates are applied to the in-memory Yrs doc and broadcast immediately. Persistence is async/periodic.
 - **Acceptable trade-off:** On server crash, up to 5 seconds of edits may be lost. This is acceptable for a prototype; write-through can be added later for enterprise durability guarantees.
 

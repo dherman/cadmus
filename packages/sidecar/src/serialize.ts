@@ -5,19 +5,19 @@
  * what the frontend editor produces.
  */
 
-import { Editor } from '@tiptap/core'
-import { createExtensions } from '@cadmus/doc-schema'
-import type { JSONContent } from '@tiptap/core'
+import { Editor } from '@tiptap/core';
+import { createExtensions } from '@cadmus/doc-schema';
+import type { JSONContent } from '@tiptap/core';
 
 export function serialize(doc: JSONContent): string {
   // Create a headless editor instance with our shared schema
   const editor = new Editor({
     extensions: createExtensions({ disableHistory: true }),
     content: doc,
-  })
+  });
 
-  const markdown = editor.getMarkdown()
-  editor.destroy()
+  const markdown = editor.getMarkdown();
+  editor.destroy();
 
-  return markdown
+  return markdown;
 }

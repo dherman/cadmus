@@ -60,12 +60,12 @@ The provider exposes connection state (`connecting`, `connected`, `disconnected`
 
 ## Integration Points
 
-| Component | Provided By | Consumed By |
-|-----------|------------|-------------|
-| `Y.Doc` | Created in collaboration setup | y-prosemirror, y-websocket, awareness |
-| `WebsocketProvider` | `y-websocket` | Collaboration extension, awareness, connection status UI |
-| `Y.XmlFragment` | `Y.Doc.getXmlFragment('prosemirror')` | `@tiptap/extension-collaboration` |
-| `Awareness` | `WebsocketProvider.awareness` | Cursor extension (PR 6) |
+| Component           | Provided By                           | Consumed By                                              |
+| ------------------- | ------------------------------------- | -------------------------------------------------------- |
+| `Y.Doc`             | Created in collaboration setup        | y-prosemirror, y-websocket, awareness                    |
+| `WebsocketProvider` | `y-websocket`                         | Collaboration extension, awareness, connection status UI |
+| `Y.XmlFragment`     | `Y.Doc.getXmlFragment('prosemirror')` | `@tiptap/extension-collaboration`                        |
+| `Awareness`         | `WebsocketProvider.awareness`         | Cursor extension (PR 6)                                  |
 
 ## Error Handling
 

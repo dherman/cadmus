@@ -38,6 +38,7 @@ When a comment is created, updated, resolved, or deleted:
 3. Connected clients receive the event and update their local comment state.
 
 Payload format:
+
 ```json
 {
   "type": "created | updated | resolved | unresolve | deleted",

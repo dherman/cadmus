@@ -12,26 +12,26 @@ The toolbar covers all mark and node types in the launch schema. It does not inc
 
 **Marks (inline formatting):**
 
-| Button | Action | Keyboard Shortcut | Active State |
-|--------|--------|-------------------|--------------|
-| Bold | `toggleBold` | Ctrl+B | Highlighted when cursor is in bold text |
-| Italic | `toggleItalic` | Ctrl+I | Highlighted when cursor is in italic text |
-| Strikethrough | `toggleStrike` | Ctrl+Shift+X | Highlighted when cursor is in struck text |
-| Code | `toggleCode` | Ctrl+E | Highlighted when cursor is in inline code |
-| Link | `setLink` / `unsetLink` | Ctrl+K | Highlighted when cursor is on a link |
+| Button        | Action                  | Keyboard Shortcut | Active State                              |
+| ------------- | ----------------------- | ----------------- | ----------------------------------------- |
+| Bold          | `toggleBold`            | Ctrl+B            | Highlighted when cursor is in bold text   |
+| Italic        | `toggleItalic`          | Ctrl+I            | Highlighted when cursor is in italic text |
+| Strikethrough | `toggleStrike`          | Ctrl+Shift+X      | Highlighted when cursor is in struck text |
+| Code          | `toggleCode`            | Ctrl+E            | Highlighted when cursor is in inline code |
+| Link          | `setLink` / `unsetLink` | Ctrl+K            | Highlighted when cursor is on a link      |
 
 **Blocks (structural formatting):**
 
-| Button | Action | Notes |
-|--------|--------|-------|
-| Heading 1 | `toggleHeading({ level: 1 })` | Active when cursor is in h1 |
-| Heading 2 | `toggleHeading({ level: 2 })` | Active when cursor is in h2 |
-| Heading 3 | `toggleHeading({ level: 3 })` | h4–h6 omitted from toolbar (accessible via markdown shortcuts `####`) |
-| Bullet List | `toggleBulletList` | Active when cursor is in a bullet list |
-| Ordered List | `toggleOrderedList` | Active when cursor is in an ordered list |
-| Blockquote | `toggleBlockquote` | Active when cursor is in a blockquote |
-| Code Block | `toggleCodeBlock` | Active when cursor is in a code block |
-| Horizontal Rule | `setHorizontalRule` | Insert only, no toggle state |
+| Button          | Action                        | Notes                                                                 |
+| --------------- | ----------------------------- | --------------------------------------------------------------------- |
+| Heading 1       | `toggleHeading({ level: 1 })` | Active when cursor is in h1                                           |
+| Heading 2       | `toggleHeading({ level: 2 })` | Active when cursor is in h2                                           |
+| Heading 3       | `toggleHeading({ level: 3 })` | h4–h6 omitted from toolbar (accessible via markdown shortcuts `####`) |
+| Bullet List     | `toggleBulletList`            | Active when cursor is in a bullet list                                |
+| Ordered List    | `toggleOrderedList`           | Active when cursor is in an ordered list                              |
+| Blockquote      | `toggleBlockquote`            | Active when cursor is in a blockquote                                 |
+| Code Block      | `toggleCodeBlock`             | Active when cursor is in a code block                                 |
+| Horizontal Rule | `setHorizontalRule`           | Insert only, no toggle state                                          |
 
 **Not in toolbar (accessible via other means):**
 

@@ -11,24 +11,22 @@
  * This is a placeholder that returns the Step JSON structure.
  */
 
-import { Editor } from '@tiptap/core'
-import { createExtensions } from '@cadmus/doc-schema'
-import { Node as ProseMirrorNode } from '@tiptap/pm/model'
-import type { JSONContent } from '@tiptap/core'
-import type { Step } from '@tiptap/pm/transform'
-
+import { Editor } from '@tiptap/core';
+import { createExtensions } from '@cadmus/doc-schema';
+import { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import type { JSONContent } from '@tiptap/core';
 export function diff(oldDoc: JSONContent, newDoc: JSONContent): object[] {
   // Create a headless editor to get the schema
   const editor = new Editor({
     extensions: createExtensions({ disableHistory: true }),
     content: oldDoc,
-  })
+  });
 
-  const schema = editor.schema
+  const schema = editor.schema;
 
   // Reconstruct ProseMirror Node instances from JSON
-  const oldNode = ProseMirrorNode.fromJSON(schema, oldDoc)
-  const newNode = ProseMirrorNode.fromJSON(schema, newDoc)
+  const _oldNode = ProseMirrorNode.fromJSON(schema, oldDoc);
+  const _newNode = ProseMirrorNode.fromJSON(schema, newDoc);
 
   // TODO: Use prosemirror-recreate-transform to compute Steps.
   //
@@ -41,9 +39,9 @@ export function diff(oldDoc: JSONContent, newDoc: JSONContent): object[] {
   // For now, return an empty array. The merge endpoint should detect
   // this and fall back to a full document replace if no steps are computed.
 
-  const steps: object[] = []
+  const steps: object[] = [];
 
-  editor.destroy()
+  editor.destroy();
 
-  return steps
+  return steps;
 }

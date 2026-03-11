@@ -6,11 +6,10 @@
   "description": "Cadmus web client — React + Tiptap collaborative editor",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@cadmus/doc-schema": "*",
+    "@cadmus/doc-schema": "workspace:*",
     "@tiptap/core": "^3.7.0",
     "@tiptap/react": "^3.7.0",
     "@tiptap/starter-kit": "^3.7.0",

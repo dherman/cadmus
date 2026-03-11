@@ -58,7 +58,7 @@ CollaborationCursor.configure({
     // Cursor line: 2px wide, colored div.
     // Name label: small tag above the cursor with the user's name.
   },
-})
+});
 ```
 
 The custom render function gives us control over the cursor's visual style (thickness, label positioning, animation) without patching y-prosemirror internals.

@@ -15,6 +15,7 @@
 - [ ] Subscribe to editor transaction events to track active states
 - [ ] Use `useCallback` for button click handlers to avoid re-creating functions
 - [ ] Render button groups:
+
   ```tsx
   export function Toolbar({ editor }: { editor: Editor | null }) {
     if (!editor) return null;
@@ -31,9 +32,7 @@
           {/* ... more mark buttons */}
         </div>
         <div className="toolbar-separator" />
-        <div className="toolbar-group">
-          {/* Block buttons */}
-        </div>
+        <div className="toolbar-group">{/* Block buttons */}</div>
       </div>
     );
   }
@@ -43,7 +42,12 @@
 
 - [ ] Create `ToolbarButton` (within `Toolbar.tsx` or as a separate file):
   ```tsx
-  function ToolbarButton({ label, isActive, onClick, disabled }: {
+  function ToolbarButton({
+    label,
+    isActive,
+    onClick,
+    disabled,
+  }: {
     label: string;
     isActive: boolean;
     onClick: () => void;
@@ -86,10 +90,12 @@
 
 - [ ] Ensure the toolbar updates when the selection changes (to reflect active states). Tiptap's `useEditor` already handles this when the editor instance is passed through React state. If additional granularity is needed, use:
   ```typescript
-  const [, forceUpdate] = useReducer(x => x + 1, 0);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
   useEffect(() => {
     editor.on('transaction', forceUpdate);
-    return () => { editor.off('transaction', forceUpdate); };
+    return () => {
+      editor.off('transaction', forceUpdate);
+    };
   }, [editor]);
   ```
 

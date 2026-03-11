@@ -5,9 +5,9 @@
  * the frontend editor's behavior.
  */
 
-import { Editor } from '@tiptap/core'
-import { createExtensions } from '@cadmus/doc-schema'
-import type { JSONContent } from '@tiptap/core'
+import { Editor } from '@tiptap/core';
+import { createExtensions } from '@cadmus/doc-schema';
+import type { JSONContent } from '@tiptap/core';
 
 export function parse(markdown: string): JSONContent {
   const editor = new Editor({
@@ -15,10 +15,10 @@ export function parse(markdown: string): JSONContent {
     content: markdown,
     // @ts-expect-error — contentType is available when Markdown extension is loaded
     contentType: 'markdown',
-  })
+  });
 
-  const json = editor.getJSON()
-  editor.destroy()
+  const json = editor.getJSON();
+  editor.destroy();
 
-  return json
+  return json;
 }

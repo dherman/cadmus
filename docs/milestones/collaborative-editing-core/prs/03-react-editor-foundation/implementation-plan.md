@@ -18,6 +18,7 @@
   - Workspace: `@cadmus/doc-schema` (via `"@cadmus/doc-schema": "workspace:*"`)
 - [ ] Create `web/tsconfig.json` extending the root base config, with `"jsx": "react-jsx"` and appropriate `include`/`exclude` paths
 - [ ] Create `web/vite.config.ts`:
+
   ```typescript
   import { defineConfig } from 'vite';
   import react from '@vitejs/plugin-react';
@@ -34,6 +35,7 @@
 
 - [ ] Create `web/index.html` — standard HTML5 boilerplate with a `<div id="root">` and `<script type="module" src="/src/main.tsx">`. Set `<title>Cadmus</title>`
 - [ ] Create `web/src/main.tsx`:
+
   ```tsx
   import { StrictMode } from 'react';
   import { createRoot } from 'react-dom/client';
@@ -43,7 +45,7 @@
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
-    </StrictMode>
+    </StrictMode>,
   );
   ```
 
@@ -53,6 +55,7 @@
   - Import `useEditor`, `EditorContent` from `@tiptap/react`
   - Import `extensions` from `@cadmus/doc-schema`
   - Define the component:
+
     ```tsx
     import { useEditor, EditorContent } from '@tiptap/react';
     import { extensions } from '@cadmus/doc-schema';
@@ -76,11 +79,13 @@
       );
     }
     ```
+
 - [ ] Export the `editor` instance via a ref or context so the Toolbar (PR 5) and Collaboration (PR 4) components can access it
 
 ### Step 4: Create the App Shell
 
 - [ ] Create `web/src/App.tsx`:
+
   ```tsx
   import { Editor } from './Editor';
 

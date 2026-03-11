@@ -6,13 +6,10 @@
   "description": "Stateless markdown↔JSON conversion service",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
-    "build": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "start": "node dist/server.js"
   },
   "dependencies": {
-    "@cadmus/doc-schema": "*",
+    "@cadmus/doc-schema": "workspace:*",
     "@tiptap/core": "^3.7.0",
     "@tiptap/pm": "^3.7.0",
     "express": "^4.18.0"

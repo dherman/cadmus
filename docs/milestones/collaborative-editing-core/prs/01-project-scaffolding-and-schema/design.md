@@ -52,25 +52,25 @@ The package uses TypeScript with `"moduleResolution": "bundler"` and emits both 
 
 This table maps from the architecture spec to the specific Tiptap extensions configured in this PR:
 
-| Schema Spec | Tiptap Extension | Source | Config Notes |
-|-------------|-----------------|--------|--------------|
-| `doc` | `Document` | StarterKit | — |
-| `paragraph` | `Paragraph` | StarterKit | — |
-| `heading` | `Heading` | StarterKit | `levels: [1, 2, 3, 4, 5, 6]` |
-| `codeBlock` | `CodeBlock` | StarterKit | `languageClassPrefix: 'language-'` |
-| `blockquote` | `Blockquote` | StarterKit | — |
-| `bulletList` | `BulletList` | StarterKit | — |
-| `orderedList` | `OrderedList` | StarterKit | — |
-| `listItem` | `ListItem` | StarterKit | — |
-| `horizontalRule` | `HorizontalRule` | StarterKit | — |
-| `hardBreak` | `HardBreak` | StarterKit | — |
-| `text` | `Text` | StarterKit | — |
-| `bold` | `Bold` | StarterKit | — |
-| `italic` | `Italic` | StarterKit | — |
-| `strike` | `Strike` | StarterKit | — |
-| `code` | `Code` | StarterKit | — |
-| `image` | `Image` | `@tiptap/extension-image` | `inline: false` (block-level) |
-| `link` | `Link` | `@tiptap/extension-link` | `openOnClick: false`, `autolink: true` |
+| Schema Spec      | Tiptap Extension | Source                    | Config Notes                           |
+| ---------------- | ---------------- | ------------------------- | -------------------------------------- |
+| `doc`            | `Document`       | StarterKit                | —                                      |
+| `paragraph`      | `Paragraph`      | StarterKit                | —                                      |
+| `heading`        | `Heading`        | StarterKit                | `levels: [1, 2, 3, 4, 5, 6]`           |
+| `codeBlock`      | `CodeBlock`      | StarterKit                | `languageClassPrefix: 'language-'`     |
+| `blockquote`     | `Blockquote`     | StarterKit                | —                                      |
+| `bulletList`     | `BulletList`     | StarterKit                | —                                      |
+| `orderedList`    | `OrderedList`    | StarterKit                | —                                      |
+| `listItem`       | `ListItem`       | StarterKit                | —                                      |
+| `horizontalRule` | `HorizontalRule` | StarterKit                | —                                      |
+| `hardBreak`      | `HardBreak`      | StarterKit                | —                                      |
+| `text`           | `Text`           | StarterKit                | —                                      |
+| `bold`           | `Bold`           | StarterKit                | —                                      |
+| `italic`         | `Italic`         | StarterKit                | —                                      |
+| `strike`         | `Strike`         | StarterKit                | —                                      |
+| `code`           | `Code`           | StarterKit                | —                                      |
+| `image`          | `Image`          | `@tiptap/extension-image` | `inline: false` (block-level)          |
+| `link`           | `Link`           | `@tiptap/extension-link`  | `openOnClick: false`, `autolink: true` |
 
 ## Testing Strategy
 

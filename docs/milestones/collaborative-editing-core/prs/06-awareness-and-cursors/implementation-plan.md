@@ -34,7 +34,7 @@
     CollaborationCursor.configure({
       provider,
       user: { name: identity.name, color: identity.color },
-    })
+    });
     ```
   - The `provider` is the `WebsocketProvider` from the collaboration setup (PR 4)
 
@@ -42,6 +42,7 @@
 
 - [ ] Create `web/src/cursor-renderer.ts`
 - [ ] Export a `renderCursor` function matching the `CollaborationCursor` render API:
+
   ```typescript
   export function renderCursor(user: { name: string; color: string }) {
     const cursor = document.createElement('span');
@@ -57,6 +58,7 @@
     return cursor;
   }
   ```
+
 - [ ] Pass this to the extension configuration: `render: renderCursor`
 
 ### Step 5: Add Cursor Styles
@@ -75,6 +77,7 @@
 - [ ] Read all awareness states: `provider.awareness.getStates()`
 - [ ] Filter to states that have a `user` field (skip entries without it)
 - [ ] Render a compact list:
+
   ```tsx
   export function Presence({ provider }: { provider: WebsocketProvider }) {
     const [users, setUsers] = useState<{ name: string; color: string }[]>([]);
@@ -83,9 +86,7 @@
       const update = () => {
         const states = Array.from(provider.awareness.getStates().values());
         setUsers(
-          states
-            .filter((s) => s.user)
-            .map((s) => s.user as { name: string; color: string })
+          states.filter((s) => s.user).map((s) => s.user as { name: string; color: string }),
         );
       };
       provider.awareness.on('change', update);
@@ -97,10 +98,7 @@
       <div className="presence" aria-label="Connected users">
         {users.map((user, i) => (
           <div key={i} className="presence-user" title={user.name}>
-            <span
-              className="presence-dot"
-              style={{ backgroundColor: user.color }}
-            />
+            <span className="presence-dot" style={{ backgroundColor: user.color }} />
             <span className="presence-name">{user.name}</span>
           </div>
         ))}
