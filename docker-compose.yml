@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: cadmus
+      POSTGRES_PASSWORD: postgres
+
+  server:
+    build: ./packages/server
+    ports:
+      - '8080:8080'
+    environment:
+      - RUST_LOG=info
+      - DATABASE_URL=postgres://postgres:postgres@db/cadmus
+    depends_on:
+      - db

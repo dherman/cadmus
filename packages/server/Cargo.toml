@@ -5,14 +5,14 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-# Web framework
-axum = { version = "0.7", features = ["ws"] }
+# Web framework (must match yrs-axum's axum dependency)
+axum = { version = "0.8", features = ["ws"] }
 tokio = { version = "1", features = ["full"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
 
-# Yrs (Yjs Rust port) and sync protocol
-yrs = "0.21"
+# Yrs (Yjs Rust port) — must use 0.18 to match yrs-axum 0.8
+yrs = "0.18"
 yrs-axum = "0.8"
 
 # Serialization
@@ -34,5 +34,10 @@ uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 dashmap = "6"
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 reqwest = { version = "0.12", features = ["json"] }
+futures-util = "0.3"
+
+[dev-dependencies]
+tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
+futures-util = "0.3"
