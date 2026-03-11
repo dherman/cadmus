@@ -3,3 +3,7 @@
 ## Commits
 
 Always use the conventional-commits skill (`.skills/conventional-commits/SKILL.md`) when writing commit messages.
+
+## Task Tracking
+
+When completing tasks from planning documents (implementation plans, milestone checklists, etc.), always check off the corresponding checkbox (`- [ ]` → `- [x]`) immediately after the task is done. Don't wait until the end — mark each task as completed as you go.
