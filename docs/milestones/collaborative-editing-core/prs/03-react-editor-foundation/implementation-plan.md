@@ -80,7 +80,6 @@
     }
     ```
 
-- [ ] Export the `editor` instance via a ref or context so the Toolbar (PR 5) and Collaboration (PR 4) components can access it
 
 ### Step 4: Create the App Shell
 

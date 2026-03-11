@@ -41,6 +41,7 @@
 ### Step 3: Update the Editor to Use Collaboration
 
 - [ ] Modify `web/src/Editor.tsx`:
+  - Expose the `editor` instance via a forwarded ref or context so that the Toolbar (PR 5) and this collaboration wiring can access it
   - Accept `ydoc` and `provider` as props (or consume from context)
   - Update the `useEditor` call:
     - Remove the `content` prop
