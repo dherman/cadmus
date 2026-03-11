@@ -12,13 +12,13 @@
  * - Never modify attribute semantics without a migration.
  */
 
-import type { JSONContent } from '@tiptap/core'
+import type { JSONContent } from '@tiptap/core';
 
 export type Migration = {
-  fromVersion: number
-  toVersion: number
-  migrate: (doc: JSONContent) => JSONContent
-}
+  fromVersion: number;
+  toVersion: number;
+  migrate: (doc: JSONContent) => JSONContent;
+};
 
 /**
  * Registry of all migrations, in order.
@@ -36,7 +36,7 @@ export const migrations: Migration[] = [
   //     return doc
   //   },
   // },
-]
+];
 
 /**
  * Apply all necessary migrations to bring a document from `fromVersion`
@@ -47,22 +47,22 @@ export function migrateDocument(
   fromVersion: number,
   toVersion: number,
 ): JSONContent {
-  let current = doc
-  let currentVersion = fromVersion
+  let current = doc;
+  let currentVersion = fromVersion;
 
   for (const migration of migrations) {
     if (migration.fromVersion === currentVersion && migration.toVersion <= toVersion) {
-      current = migration.migrate(current)
-      currentVersion = migration.toVersion
+      current = migration.migrate(current);
+      currentVersion = migration.toVersion;
     }
   }
 
   if (currentVersion !== toVersion) {
     throw new Error(
       `Migration gap: could not migrate from v${fromVersion} to v${toVersion}. ` +
-      `Reached v${currentVersion}.`
-    )
+        `Reached v${currentVersion}.`,
+    );
   }
 
-  return current
+  return current;
 }

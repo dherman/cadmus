@@ -29,11 +29,13 @@ When creating or modifying a git commit message, use the **Conventional Commits*
 ### Breaking Changes
 
 Add `!` after the type to indicate breaking changes (triggers major version bump):
+
 ```
 feat!: change API to use async traits
 ```
 
 Also include `BREAKING CHANGE:` in the footer with a summary:
+
 ```
 feat: redesign conductor protocol
 

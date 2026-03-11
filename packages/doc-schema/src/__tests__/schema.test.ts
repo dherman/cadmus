@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { Editor } from '@tiptap/core'
-import { createExtensions, SCHEMA_VERSION } from '../index'
+import { describe, it, expect } from 'vitest';
+import { Editor } from '@tiptap/core';
+import { createExtensions, SCHEMA_VERSION } from '../index';
 
 /**
  * Helper: create a headless Tiptap editor for testing the schema.
@@ -9,24 +9,24 @@ function createTestEditor() {
   return new Editor({
     extensions: createExtensions(),
     content: '',
-  })
+  });
 }
 
 describe('doc-schema', () => {
   it('produces a valid ProseMirror schema', () => {
-    const editor = createTestEditor()
-    const { schema } = editor
+    const editor = createTestEditor();
+    const { schema } = editor;
 
-    expect(schema).toBeDefined()
-    expect(schema.nodes).toBeDefined()
-    expect(schema.marks).toBeDefined()
+    expect(schema).toBeDefined();
+    expect(schema.nodes).toBeDefined();
+    expect(schema.marks).toBeDefined();
 
-    editor.destroy()
-  })
+    editor.destroy();
+  });
 
   it('has all expected node types', () => {
-    const editor = createTestEditor()
-    const nodeNames = Object.keys(editor.schema.nodes)
+    const editor = createTestEditor();
+    const nodeNames = Object.keys(editor.schema.nodes);
 
     const expectedNodes = [
       'doc',
@@ -41,47 +41,47 @@ describe('doc-schema', () => {
       'hardBreak',
       'image',
       'text',
-    ]
+    ];
 
     for (const name of expectedNodes) {
-      expect(nodeNames, `missing node: ${name}`).toContain(name)
+      expect(nodeNames, `missing node: ${name}`).toContain(name);
     }
 
-    editor.destroy()
-  })
+    editor.destroy();
+  });
 
   it('has all expected mark types', () => {
-    const editor = createTestEditor()
-    const markNames = Object.keys(editor.schema.marks)
+    const editor = createTestEditor();
+    const markNames = Object.keys(editor.schema.marks);
 
-    const expectedMarks = ['bold', 'italic', 'strike', 'code', 'link']
+    const expectedMarks = ['bold', 'italic', 'strike', 'code', 'link'];
 
     for (const name of expectedMarks) {
-      expect(markNames, `missing mark: ${name}`).toContain(name)
+      expect(markNames, `missing mark: ${name}`).toContain(name);
     }
 
-    editor.destroy()
-  })
+    editor.destroy();
+  });
 
   it('does not include underline', () => {
-    const editor = createTestEditor()
-    expect(editor.schema.marks.underline).toBeUndefined()
-    editor.destroy()
-  })
+    const editor = createTestEditor();
+    expect(editor.schema.marks.underline).toBeUndefined();
+    editor.destroy();
+  });
 
   it('image is block-level', () => {
-    const editor = createTestEditor()
-    expect(editor.schema.nodes.image.isBlock).toBe(true)
-    editor.destroy()
-  })
+    const editor = createTestEditor();
+    expect(editor.schema.nodes.image.isBlock).toBe(true);
+    editor.destroy();
+  });
 
   it('SCHEMA_VERSION is 1', () => {
-    expect(SCHEMA_VERSION).toBe(1)
-  })
+    expect(SCHEMA_VERSION).toBe(1);
+  });
 
   it('schema spec snapshot', () => {
-    const editor = createTestEditor()
-    const { schema } = editor
+    const editor = createTestEditor();
+    const { schema } = editor;
 
     const spec = {
       nodes: Object.fromEntries(
@@ -91,16 +91,16 @@ describe('doc-schema', () => {
         ]),
       ),
       marks: Object.keys(schema.marks).sort(),
-    }
+    };
 
-    expect(spec).toMatchSnapshot()
+    expect(spec).toMatchSnapshot();
 
-    editor.destroy()
-  })
+    editor.destroy();
+  });
 
   it('round-trips ProseMirror JSON', () => {
-    const editor = createTestEditor()
-    const { schema } = editor
+    const editor = createTestEditor();
+    const { schema } = editor;
 
     // Build a document that exercises all node and mark types
     const docJSON = {
@@ -126,16 +126,18 @@ describe('doc-schema', () => {
             {
               type: 'text',
               text: 'link',
-              marks: [{
-                type: 'link',
-                attrs: {
-                  href: 'https://example.com',
-                  target: '_blank',
-                  rel: 'noopener noreferrer nofollow',
-                  class: null,
-                  title: null,
+              marks: [
+                {
+                  type: 'link',
+                  attrs: {
+                    href: 'https://example.com',
+                    target: '_blank',
+                    rel: 'noopener noreferrer nofollow',
+                    class: null,
+                    title: null,
+                  },
                 },
-              }],
+              ],
             },
           ],
         },
@@ -185,36 +187,40 @@ describe('doc-schema', () => {
         { type: 'horizontalRule' },
         {
           type: 'image',
-          attrs: { src: 'https://example.com/img.png', alt: 'test', title: null, width: null, height: null },
+          attrs: {
+            src: 'https://example.com/img.png',
+            alt: 'test',
+            title: null,
+            width: null,
+            height: null,
+          },
         },
         {
           type: 'paragraph',
           content: [{ type: 'hardBreak' }, { type: 'text', text: 'after break' }],
         },
       ],
-    }
+    };
 
     // Parse from JSON → ProseMirror Node → back to JSON
-    const node = schema.nodeFromJSON(docJSON)
-    const roundTripped = node.toJSON()
+    const node = schema.nodeFromJSON(docJSON);
+    const roundTripped = node.toJSON();
 
-    expect(roundTripped).toEqual(docJSON)
+    expect(roundTripped).toEqual(docJSON);
 
-    editor.destroy()
-  })
+    editor.destroy();
+  });
 
   it('createExtensions with disableHistory removes history', () => {
     const editor = new Editor({
       extensions: createExtensions({ disableHistory: true }),
       content: '',
-    })
+    });
 
     // When history is disabled, the undo command should not be registered
-    const canUndo = typeof editor.can().undo === 'function'
-      ? editor.can().undo()
-      : false
-    expect(canUndo).toBe(false)
+    const canUndo = typeof editor.can().undo === 'function' ? editor.can().undo() : false;
+    expect(canUndo).toBe(false);
 
-    editor.destroy()
-  })
-})
+    editor.destroy();
+  });
+});

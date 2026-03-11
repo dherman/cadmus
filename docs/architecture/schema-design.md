@@ -14,30 +14,30 @@ The ProseMirror schema is a long-lived commitment: every document stored in the 
 
 ### Nodes
 
-| Node | Group | Content | Marks | Notes |
-|------|-------|---------|-------|-------|
-| `doc` | (root) | `block+` | — | Root node. Document must contain ≥1 block. |
-| `paragraph` | block | `inline*` | `_` (all) | Default block. Empty docs contain one empty paragraph. |
-| `heading` | block | `inline*` | `_` (all) | Attrs: `level` (1–6). Serialize as ATX (`# Heading`). |
-| `codeBlock` | block | `text*` | `''` (none) | Attrs: `language` (string, nullable). Serialize as fenced (`` ``` ``). |
-| `blockquote` | block | `block+` | — | Serialize with `>` prefix. Must contain ≥1 block. |
-| `bulletList` | block | `listItem+` | — | Serialize with `- ` prefix. |
-| `orderedList` | block | `listItem+` | — | Attrs: `start` (number, default 1). Serialize as `1. `, `2. `, etc. |
-| `listItem` | — | `paragraph block*` | — | Must start with paragraph. Can contain nested blocks (lists, code, etc.). |
-| `horizontalRule` | block | (leaf) | — | Serialize as `---`. |
-| `hardBreak` | inline | (leaf) | — | Serialize as `\` at end of line. |
-| `image` | block | (leaf) | — | Attrs: `src`, `alt`, `title`. Block-level (not inline). Serialize as `![alt](src "title")`. |
-| `text` | inline | — | `_` (all) | Base text node. |
+| Node             | Group  | Content            | Marks       | Notes                                                                                       |
+| ---------------- | ------ | ------------------ | ----------- | ------------------------------------------------------------------------------------------- |
+| `doc`            | (root) | `block+`           | —           | Root node. Document must contain ≥1 block.                                                  |
+| `paragraph`      | block  | `inline*`          | `_` (all)   | Default block. Empty docs contain one empty paragraph.                                      |
+| `heading`        | block  | `inline*`          | `_` (all)   | Attrs: `level` (1–6). Serialize as ATX (`# Heading`).                                       |
+| `codeBlock`      | block  | `text*`            | `''` (none) | Attrs: `language` (string, nullable). Serialize as fenced (` ``` `).                        |
+| `blockquote`     | block  | `block+`           | —           | Serialize with `>` prefix. Must contain ≥1 block.                                           |
+| `bulletList`     | block  | `listItem+`        | —           | Serialize with `- ` prefix.                                                                 |
+| `orderedList`    | block  | `listItem+`        | —           | Attrs: `start` (number, default 1). Serialize as `1. `, `2. `, etc.                         |
+| `listItem`       | —      | `paragraph block*` | —           | Must start with paragraph. Can contain nested blocks (lists, code, etc.).                   |
+| `horizontalRule` | block  | (leaf)             | —           | Serialize as `---`.                                                                         |
+| `hardBreak`      | inline | (leaf)             | —           | Serialize as `\` at end of line.                                                            |
+| `image`          | block  | (leaf)             | —           | Attrs: `src`, `alt`, `title`. Block-level (not inline). Serialize as `![alt](src "title")`. |
+| `text`           | inline | —                  | `_` (all)   | Base text node.                                                                             |
 
 ### Marks
 
-| Mark | Excludes | Serialize | Notes |
-|------|----------|-----------|-------|
-| `bold` | — | `**text**` | Never `__text__`. |
-| `italic` | — | `*text*` | Never `_text_`. |
-| `code` | `_` (all) | `` `text` `` | Excludes all other marks (matches markdown behavior). |
-| `link` | — | `[text](href "title")` | Attrs: `href`, `title` (nullable). Non-inclusive (doesn't extend on typing). |
-| `strike` | — | `~~text~~` | GFM extension. Requires `gfm: true` in MarkedJS config. |
+| Mark     | Excludes  | Serialize              | Notes                                                                        |
+| -------- | --------- | ---------------------- | ---------------------------------------------------------------------------- |
+| `bold`   | —         | `**text**`             | Never `__text__`.                                                            |
+| `italic` | —         | `*text*`               | Never `_text_`.                                                              |
+| `code`   | `_` (all) | `` `text` ``           | Excludes all other marks (matches markdown behavior).                        |
+| `link`   | —         | `[text](href "title")` | Attrs: `href`, `title` (nullable). Non-inclusive (doesn't extend on typing). |
+| `strike` | —         | `~~text~~`             | GFM extension. Requires `gfm: true` in MarkedJS config.                      |
 
 ### Excluded from launch
 
@@ -50,21 +50,21 @@ The ProseMirror schema is a long-lived commitment: every document stored in the 
 
 The serializer produces deterministic output. CLI users and agents should expect this format from checkouts and match it for minimal diffs on push.
 
-| Construct | Canonical Form |
-|-----------|---------------|
-| Bold | `**text**` |
-| Italic | `*text*` |
-| Inline code | `` `text` `` |
-| Heading | `# ATX style` (with space after `#`) |
-| Code block | Triple-backtick fenced (never indented) |
-| Bullet list | `- item` (hyphen, never `*` or `+`) |
-| Ordered list | `1. item`, `2. item`, etc. |
-| Blockquote | `> text` |
-| Hard break | `\` at end of line (not two trailing spaces) |
-| Horizontal rule | `---` |
-| Image | `![alt](src "title")` |
-| Link | `[text](url "title")` |
-| Indentation | 2 spaces for nesting |
+| Construct       | Canonical Form                               |
+| --------------- | -------------------------------------------- |
+| Bold            | `**text**`                                   |
+| Italic          | `*text*`                                     |
+| Inline code     | `` `text` ``                                 |
+| Heading         | `# ATX style` (with space after `#`)         |
+| Code block      | Triple-backtick fenced (never indented)      |
+| Bullet list     | `- item` (hyphen, never `*` or `+`)          |
+| Ordered list    | `1. item`, `2. item`, etc.                   |
+| Blockquote      | `> text`                                     |
+| Hard break      | `\` at end of line (not two trailing spaces) |
+| Horizontal rule | `---`                                        |
+| Image           | `![alt](src "title")`                        |
+| Link            | `[text](url "title")`                        |
+| Indentation     | 2 spaces for nesting                         |
 
 ## Schema Versioning and Migration
 

@@ -14,13 +14,13 @@ A collaborative document editor backed by markdown, built for real-time editing,
 
 The system consists of five main components:
 
-| Component | Language | Purpose |
-|-----------|----------|---------|
-| **Server** | Rust (Axum) | WebSocket sync (Yrs), REST API, auth, permissions, persistence |
-| **Web Client** | TypeScript (React + Tiptap) | Browser-based collaborative editor |
-| **Doc Schema** | TypeScript | Shared Tiptap/ProseMirror schema — single source of truth for document structure and markdown serialization |
-| **Sidecar** | TypeScript (Node) | Stateless markdown↔JSON conversion service, co-deployed with the server |
-| **CLI** | TypeScript | Command-line tool for checkout/push workflows and agent scripting |
+| Component      | Language                    | Purpose                                                                                                     |
+| -------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Server**     | Rust (Axum)                 | WebSocket sync (Yrs), REST API, auth, permissions, persistence                                              |
+| **Web Client** | TypeScript (React + Tiptap) | Browser-based collaborative editor                                                                          |
+| **Doc Schema** | TypeScript                  | Shared Tiptap/ProseMirror schema — single source of truth for document structure and markdown serialization |
+| **Sidecar**    | TypeScript (Node)           | Stateless markdown↔JSON conversion service, co-deployed with the server                                     |
+| **CLI**        | TypeScript                  | Command-line tool for checkout/push workflows and agent scripting                                           |
 
 For detailed design documentation, see [docs/architecture/](docs/architecture/).
 

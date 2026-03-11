@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The sidecar exists to solve one problem: the Rust server needs to convert between Yrs document state (ProseMirror JSON) and canonical markdown. Rather than reimplementing Tiptap's markdown codec in Rust — which would be a maintenance burden and a source of subtle serialization divergence — we run a small Node service that uses the *exact same schema code* as the frontend editor.
+The sidecar exists to solve one problem: the Rust server needs to convert between Yrs document state (ProseMirror JSON) and canonical markdown. Rather than reimplementing Tiptap's markdown codec in Rust — which would be a maintenance burden and a source of subtle serialization divergence — we run a small Node service that uses the _exact same schema code_ as the frontend editor.
 
 ## Responsibilities
 

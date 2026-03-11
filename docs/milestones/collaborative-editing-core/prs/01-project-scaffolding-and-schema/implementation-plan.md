@@ -14,8 +14,8 @@
 - [ ] Create `pnpm-workspace.yaml`:
   ```yaml
   packages:
-    - "packages/*"
-    - "web"
+    - 'packages/*'
+    - 'web'
   ```
 - [ ] Create root `.gitignore` covering `node_modules/`, `dist/`, `target/` (Rust), `.env`, etc.
 - [ ] Create root `tsconfig.base.json` with shared compiler options (`strict: true`, `moduleResolution: "bundler"`, `target: "ES2022"`)

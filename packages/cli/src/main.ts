@@ -11,14 +11,14 @@
  *   cadmus comment <doc-id>        Add a comment to a document
  */
 
-import { Command } from 'commander'
+import { Command } from 'commander';
 
-const program = new Command()
+const program = new Command();
 
 program
   .name('cadmus')
   .description('Cadmus CLI — collaborative document editing from the command line')
-  .version('0.1.0')
+  .version('0.1.0');
 
 // --- Auth ---
 
@@ -30,21 +30,21 @@ program
   .option('-s, --server <url>', 'Server URL', 'http://localhost:8080')
   .action(async (options) => {
     // TODO: Prompt for credentials, exchange for token, store in ~/.config/cadmus/credentials
-    console.log(`Authenticating with ${options.server}...`)
-    console.log('Not yet implemented')
-  })
+    console.log(`Authenticating with ${options.server}...`);
+    console.log('Not yet implemented');
+  });
 
 // --- Documents ---
 
-const docs = program.command('docs').description('Document management')
+const docs = program.command('docs').description('Document management');
 
 docs
   .command('list')
   .description('List accessible documents')
   .action(async () => {
     // TODO: GET /api/docs, display as table
-    console.log('Not yet implemented')
-  })
+    console.log('Not yet implemented');
+  });
 
 // --- Checkout ---
 
@@ -52,14 +52,14 @@ program
   .command('checkout <doc-id>')
   .description('Download a document as markdown')
   .option('-o, --output <path>', 'Output file path')
-  .action(async (docId, options) => {
+  .action(async (docId, _options) => {
     // TODO:
     // 1. GET /api/docs/{id}/content?format=markdown
     // 2. Write markdown to output file
     // 3. Record version in .cadmus/{doc-id}.json
-    console.log(`Checking out document ${docId}...`)
-    console.log('Not yet implemented')
-  })
+    console.log(`Checking out document ${docId}...`);
+    console.log('Not yet implemented');
+  });
 
 // --- Push ---
 
@@ -74,10 +74,10 @@ program
     // 2. Read the local markdown file
     // 3. POST /api/docs/{id}/content (with dry_run flag if set)
     // 4. Display result (diff preview or applied changes)
-    const mode = options.dryRun ? '(dry run)' : ''
-    console.log(`Pushing ${file} to document ${docId} ${mode}...`)
-    console.log('Not yet implemented')
-  })
+    const mode = options.dryRun ? '(dry run)' : '';
+    console.log(`Pushing ${file} to document ${docId} ${mode}...`);
+    console.log('Not yet implemented');
+  });
 
 // --- Comments ---
 
@@ -86,12 +86,12 @@ program
   .description('Add a comment to a document')
   .option('--lines <range>', 'Line range (e.g., 45-52)')
   .option('-m, --message <text>', 'Comment text')
-  .action(async (docId, options) => {
+  .action(async (docId, _options) => {
     // TODO:
     // 1. Parse line range to character offsets
     // 2. POST /api/docs/{id}/comments
-    console.log(`Adding comment to document ${docId}...`)
-    console.log('Not yet implemented')
-  })
+    console.log(`Adding comment to document ${docId}...`);
+    console.log('Not yet implemented');
+  });
 
-program.parse()
+program.parse();

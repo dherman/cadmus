@@ -8,32 +8,27 @@
  * - Awareness for cursor/presence rendering
  */
 
-import { useEditor, EditorContent } from '@tiptap/react'
-import { createExtensions } from '@cadmus/doc-schema'
-import * as Y from 'yjs'
-import { WebsocketProvider } from 'y-websocket'
+import { useEditor, EditorContent } from '@tiptap/react';
+import { createExtensions } from '@cadmus/doc-schema';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
 // import { yProsemirror, yCursorPlugin, ySyncPlugin, yUndoPlugin } from 'y-prosemirror'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react';
 
 interface EditorProps {
-  documentId: string
-  wsUrl: string
-  token: string
-  userName: string
-  userColor: string
+  documentId: string;
+  wsUrl: string;
+  token: string;
+  userName: string;
+  userColor: string;
 }
 
 export function CollabEditor({ documentId, wsUrl, token, userName, userColor }: EditorProps) {
   // Create Yjs document and WebSocket provider
-  const ydoc = useMemo(() => new Y.Doc(), [])
+  const ydoc = useMemo(() => new Y.Doc(), []);
 
   useEffect(() => {
-    const provider = new WebsocketProvider(
-      wsUrl,
-      documentId,
-      ydoc,
-      { params: { token } }
-    )
+    const provider = new WebsocketProvider(wsUrl, documentId, ydoc, { params: { token } });
 
     // Set local awareness state
     provider.awareness.setLocalState({
@@ -41,12 +36,12 @@ export function CollabEditor({ documentId, wsUrl, token, userName, userColor }: 
         name: userName,
         color: userColor,
       },
-    })
+    });
 
     return () => {
-      provider.destroy()
-    }
-  }, [documentId, wsUrl, token, ydoc, userName, userColor])
+      provider.destroy();
+    };
+  }, [documentId, wsUrl, token, ydoc, userName, userColor]);
 
   // Create Tiptap editor with shared schema + collaboration extensions
   const editor = useEditor({
@@ -57,7 +52,7 @@ export function CollabEditor({ documentId, wsUrl, token, userName, userColor }: 
       // CollaborationCursor.configure({ provider, user: { name, color } }),
     ],
     content: '',
-  })
+  });
 
   return (
     <div className="cadmus-editor">
@@ -65,5 +60,5 @@ export function CollabEditor({ documentId, wsUrl, token, userName, userColor }: 
       <EditorContent editor={editor} />
       {/* TODO: Comment sidebar */}
     </div>
-  )
+  );
 }
