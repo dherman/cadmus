@@ -1,0 +1,25 @@
+{
+  "name": "@cadmus/doc-schema",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Shared document schema for Cadmus — single source of truth for Tiptap extensions and markdown serialization",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.7.0",
+    "@tiptap/starter-kit": "^3.7.0",
+    "@tiptap/extension-image": "^3.7.0",
+    "@tiptap/markdown": "^3.7.0",
+    "@tiptap/pm": "^3.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

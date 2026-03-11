@@ -1,0 +1,20 @@
+{
+  "name": "@cadmus/cli",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Cadmus CLI — checkout, edit, and push documents from the command line",
+  "bin": {
+    "cadmus": "./dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

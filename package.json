@@ -1,0 +1,20 @@
+{
+  "name": "cadmus",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "packages/doc-schema",
+    "packages/sidecar",
+    "packages/web",
+    "packages/cli"
+  ],
+  "scripts": {
+    "build:schema": "npm run build -w packages/doc-schema",
+    "dev:web": "npm run dev -w packages/web",
+    "dev:sidecar": "npm run dev -w packages/sidecar",
+    "test": "npm test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
