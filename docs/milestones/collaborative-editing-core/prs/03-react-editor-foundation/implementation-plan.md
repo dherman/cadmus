@@ -136,9 +136,9 @@
 
 ## Verification
 
-- [ ] `pnpm -F @cadmus/web dev` starts Vite and the editor loads in the browser
-- [ ] Typing in the editor works. All keyboard shortcuts (Ctrl+B for bold, etc.) function
-- [ ] Loading the sample fixture document displays all node types with correct styling
+- [x] `pnpm -F @cadmus/web dev` starts Vite and the editor loads in the browser
+- [x] Typing in the editor works. All keyboard shortcuts (Ctrl+B for bold, etc.) function
+- [x] Loading the sample fixture document displays all node types with correct styling
 - [x] `pnpm -F @cadmus/web build` produces a production build without errors
 - [x] `pnpm -F @cadmus/web typecheck` passes
 
