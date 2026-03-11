@@ -96,8 +96,8 @@
 
 ### Step 7: Docker Configuration (Optional but Recommended)
 
-- [ ] Create `server/Dockerfile` (multi-stage build: `rust:slim` for building, `debian:slim` for runtime)
-- [ ] Add `server` service to a root-level `docker-compose.yml`:
+- [x] Create `server/Dockerfile` (multi-stage build: `rust:slim` for building, `debian:slim` for runtime)
+- [x] Add `server` service to a root-level `docker-compose.yml`:
   ```yaml
   services:
     server:
