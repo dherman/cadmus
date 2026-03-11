@@ -9,7 +9,9 @@
     "typecheck": "pnpm -r run typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "dev:web": "pnpm -F @cadmus/web dev",
+    "build:web": "pnpm -F @cadmus/web build"
   },
   "engines": {
     "node": ">=20"
