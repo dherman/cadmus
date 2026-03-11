@@ -1,6 +1,11 @@
 # Build stage
 FROM rust:slim AS builder
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
