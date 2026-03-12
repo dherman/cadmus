@@ -309,7 +309,7 @@ async fn test_unload_after_grace_period() {
 - [ ] Restart the server (`Ctrl+C` and `cargo run` again)
 - [ ] Reconnect — verify the document content is fully restored
 - [ ] Disconnect all tabs — verify the session unloads after 60s (check server logs)
-- [ ] `cargo test` passes all new integration tests
+- [x] `cargo test` passes all new integration tests
 
 ## Files Created/Modified
 
