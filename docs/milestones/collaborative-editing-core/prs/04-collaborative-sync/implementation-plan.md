@@ -9,23 +9,23 @@
 
 ### Step 1: Install Collaboration Dependencies
 
-- [ ] Add to `web/package.json`:
+- [x] Add to `web/package.json`:
   - `yjs` — the core CRDT library
   - `y-websocket` — WebSocket transport provider
   - `y-prosemirror` — ProseMirror ↔ Yjs binding (peer dependency of `@tiptap/extension-collaboration`)
   - `@tiptap/extension-collaboration` — Tiptap wrapper for y-prosemirror
-- [ ] Run `pnpm install`
+- [x] Run `pnpm install`
 
 ### Step 2: Create Collaboration Provider Module
 
-- [ ] Create `web/src/collaboration.ts`:
+- [x] Create `web/src/collaboration.ts`:
   - Export a function `createCollaborationProvider(docId: string)` that:
     - Creates a new `Y.Doc`
     - Creates a `WebsocketProvider` connecting to `ws://localhost:8080/ws/${docId}`
     - Returns `{ ydoc, provider }`
   - Export a function `destroyCollaborationProvider(provider)` that disconnects and cleans up
   - Export a constant `DEFAULT_DOC_ID = 'default'` (matching the server's pre-seeded document)
-- [ ] Create `web/src/useCollaboration.ts` — a React hook:
+- [x] Create `web/src/useCollaboration.ts` — a React hook:
 
   ```typescript
   export function useCollaboration(docId: string) {
@@ -40,7 +40,7 @@
 
 ### Step 3: Update the Editor to Use Collaboration
 
-- [ ] Modify `web/src/Editor.tsx`:
+- [x] Modify `web/src/Editor.tsx`:
   - Expose the `editor` instance via a forwarded ref or context so that the Toolbar (PR 5) and this collaboration wiring can access it
   - Accept `ydoc` and `provider` as props (or consume from context)
   - Update the `useEditor` call:
@@ -53,7 +53,7 @@
 
 ### Step 4: Update the App to Manage Collaboration Lifecycle
 
-- [ ] Modify `web/src/App.tsx`:
+- [x] Modify `web/src/App.tsx`:
   - Use the `useCollaboration` hook:
     ```tsx
     const { ydoc, provider, isConnected } = useCollaboration(DEFAULT_DOC_ID);
@@ -66,40 +66,40 @@
 
 ### Step 5: Add Connection Status Styling
 
-- [ ] Update `web/src/editor.css`:
+- [x] Update `web/src/editor.css`:
   - `.status-dot`: small circle (8px), positioned in the header
   - `.status-dot.connected`: green background
   - `.status-dot.disconnected`: red background with a subtle pulse animation
 
 ### Step 6: Environment Configuration
 
-- [ ] Create `web/.env.example`:
+- [x] Create `web/.env.example`:
   ```
   VITE_WS_URL=ws://localhost:8080/ws
   ```
-- [ ] Update `collaboration.ts` to read from `import.meta.env.VITE_WS_URL`
-- [ ] Add `.env` to `.gitignore`
+- [x] Update `collaboration.ts` to read from `import.meta.env.VITE_WS_URL`
+- [x] Add `.env` to `.gitignore`
 
 ### Step 7: Manual Integration Testing
 
-- [ ] Start the Rust server: `cd server && cargo run`
-- [ ] Start the frontend: `cd web && pnpm dev`
-- [ ] Open two browser tabs to `http://localhost:5173`
-- [ ] Type in Tab A. Verify text appears in Tab B within ~100ms
-- [ ] Type simultaneously in both tabs. Verify no content duplication or loss
-- [ ] Kill the server. Verify the UI shows "disconnected." Continue typing in both tabs
-- [ ] Restart the server. Verify both tabs reconnect and their offline edits merge
-- [ ] Test undo (Ctrl+Z) in Tab A — it should only undo Tab A's changes, not Tab B's
+- [x] Start the Rust server: `cd server && cargo run`
+- [x] Start the frontend: `cd web && pnpm dev`
+- [x] Open two browser tabs to `http://localhost:5173`
+- [x] Type in Tab A. Verify text appears in Tab B within ~100ms
+- [x] Type simultaneously in both tabs. Verify no content duplication or loss
+- [x] Kill the server. Verify the UI shows "disconnected." Continue typing in both tabs
+- [x] Restart the server. Verify both tabs reconnect and their offline edits merge
+- [x] Test undo (Ctrl+Z) in Tab A — it should only undo Tab A's changes, not Tab B's
 
 ### Step 8: Add Dev Script for Full-Stack Development
 
-- [ ] Add to root `package.json`:
+- [x] Add to root `package.json`:
   ```json
   "dev": "concurrently \"pnpm dev:server\" \"pnpm dev:web\"",
   "dev:server": "cd server && cargo run",
   "dev:web": "pnpm -F @cadmus/web dev"
   ```
-- [ ] Install `concurrently` as a root dev dependency
+- [x] Install `concurrently` as a root dev dependency
 
 ## Verification
 
