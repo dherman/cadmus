@@ -23,13 +23,14 @@ fn test_config() -> cadmus_server::config::Config {
         sidecar_url: "http://localhost:3001".to_string(),
         jwt_secret: "test-secret".to_string(),
         s3_bucket: "test-bucket".to_string(),
+        s3_endpoint: None,
         port: 0,
     }
 }
 
 async fn spawn_test_server() -> (String, Arc<AppState>) {
     let state = Arc::new(AppState {
-        db: None,
+        db: cadmus_server::db::Database::connect_lazy("postgres://localhost/cadmus_test").unwrap(),
         document_sessions: cadmus_server::documents::SessionManager::new(),
         sidecar: cadmus_server::sidecar::SidecarClient::new("http://localhost:3001"),
         config: test_config(),

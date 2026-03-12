@@ -12,8 +12,13 @@ async fn main() {
         .await
         .expect("Failed to connect to database");
 
+    sqlx::migrate!()
+        .run(&database.pool)
+        .await
+        .expect("Failed to run database migrations");
+
     let state = Arc::new(AppState {
-        db: Some(database),
+        db: database,
         document_sessions: documents::SessionManager::new(),
         sidecar: sidecar::SidecarClient::new(&cfg.sidecar_url),
         config: cfg,
