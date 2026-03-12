@@ -16,7 +16,7 @@ use tower_http::trace::TraceLayer;
 
 /// Shared application state, available to all handlers.
 pub struct AppState {
-    pub db: Option<db::Database>,
+    pub db: db::Database,
     pub document_sessions: documents::SessionManager,
     pub sidecar: sidecar::SidecarClient,
     pub config: config::Config,

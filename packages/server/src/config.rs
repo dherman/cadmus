@@ -4,6 +4,7 @@ pub struct Config {
     pub sidecar_url: String,
     pub jwt_secret: String,
     pub s3_bucket: String,
+    pub s3_endpoint: Option<String>,
     pub port: u16,
 }
 
@@ -18,6 +19,7 @@ impl Config {
                 .unwrap_or_else(|_| "dev-secret-change-in-production".to_string()),
             s3_bucket: std::env::var("S3_BUCKET")
                 .unwrap_or_else(|_| "cadmus-documents".to_string()),
+            s3_endpoint: std::env::var("S3_ENDPOINT").ok(),
             port: std::env::var("PORT")
                 .ok()
                 .and_then(|p| p.parse().ok())

@@ -2,16 +2,16 @@
 
 ## Prerequisites
 
-- [ ] Milestone 1 merged and working
-- [ ] PostgreSQL 16 running locally (via Docker Compose or native)
+- [x] Milestone 1 merged and working
+- [x] PostgreSQL 16 running locally (via Docker Compose or native)
 - [ ] SQLx CLI installed (`cargo install sqlx-cli --no-default-features --features postgres`)
 
 ## Steps
 
 ### Step 1: Create the SQLx migration
 
-- [ ] Create directory `packages/server/migrations/`
-- [ ] Create `packages/server/migrations/20260312000001_initial.sql`:
+- [x] Create directory `packages/server/migrations/`
+- [x] Create `packages/server/migrations/20260312000001_initial.sql`:
 
 ```sql
 -- Documents table: metadata for each document
@@ -49,18 +49,18 @@ CREATE INDEX idx_update_log_document_id ON update_log(document_id, id);
 
 ### Step 2: Add migration runner to server startup
 
-- [ ] In `packages/server/src/main.rs`, add migration execution after database connection:
+- [x] In `packages/server/src/main.rs`, add migration execution after database connection:
 
 ```rust
 sqlx::migrate!().run(&database.pool).await
     .expect("Failed to run database migrations");
 ```
 
-- [ ] The `migrate!()` macro looks for `migrations/` relative to `CARGO_MANIFEST_DIR`, which is `packages/server/`
+- [x] The `migrate!()` macro looks for `migrations/` relative to `CARGO_MANIFEST_DIR`, which is `packages/server/`
 
 ### Step 3: Add database helper methods
 
-- [ ] Expand `packages/server/src/db.rs` with query methods for the documents table:
+- [x] Expand `packages/server/src/db.rs` with query methods for the documents table:
 
 ```rust
 impl Database {
@@ -142,7 +142,7 @@ impl Database {
 }
 ```
 
-- [ ] Add the `DocumentRow` struct:
+- [x] Add the `DocumentRow` struct:
 
 ```rust
 pub struct DocumentRow {
@@ -157,7 +157,7 @@ pub struct DocumentRow {
 
 ### Step 4: Add LocalStack to Docker Compose
 
-- [ ] Add a `localstack` service to `docker-compose.yml`:
+- [x] Add a `localstack` service to `docker-compose.yml`:
 
 ```yaml
   localstack:
@@ -169,7 +169,7 @@ pub struct DocumentRow {
       - DEFAULT_REGION=us-east-1
 ```
 
-- [ ] Add `S3_ENDPOINT` to the server service environment:
+- [x] Add `S3_ENDPOINT` to the server service environment:
 
 ```yaml
   server:
@@ -177,7 +177,7 @@ pub struct DocumentRow {
       - S3_ENDPOINT=http://localstack:4566
 ```
 
-- [ ] Create `scripts/init-localstack.sh` to create the S3 bucket:
+- [x] Create `scripts/init-localstack.sh` to create the S3 bucket:
 
 ```bash
 #!/usr/bin/env bash
@@ -191,11 +191,11 @@ aws --endpoint-url=http://localhost:4566 s3 mb s3://cadmus-documents 2>/dev/null
 echo "LocalStack ready, bucket created."
 ```
 
-- [ ] Make the script executable: `chmod +x scripts/init-localstack.sh`
+- [x] Make the script executable: `chmod +x scripts/init-localstack.sh`
 
 ### Step 5: Update Config for S3 endpoint
 
-- [ ] Add `s3_endpoint` to `Config` in `packages/server/src/config.rs`:
+- [x] Add `s3_endpoint` to `Config` in `packages/server/src/config.rs`:
 
 ```rust
 pub struct Config {
@@ -215,7 +215,7 @@ impl Config {
 
 ### Step 6: Make database connection required
 
-- [ ] In `packages/server/src/lib.rs`, change `db` from `Option<Database>` to `Database`:
+- [x] In `packages/server/src/lib.rs`, change `db` from `Option<Database>` to `Database`:
 
 ```rust
 pub struct AppState {
@@ -224,24 +224,24 @@ pub struct AppState {
 }
 ```
 
-- [ ] Update `main.rs` accordingly (remove the `Some()` wrapper)
+- [x] Update `main.rs` accordingly (remove the `Some()` wrapper)
 
 ### Step 7: Generate SQLx offline metadata
 
-- [ ] Run the migration against the local database: `cd packages/server && sqlx migrate run`
-- [ ] Generate offline query metadata: `cargo sqlx prepare`
-- [ ] Commit the generated `.sqlx/` directory (contains cached query metadata for CI builds)
+- [x] Run the migration against the local database: `cd packages/server && sqlx migrate run`
+- [x] Generate offline query metadata: `cargo sqlx prepare` (no queries to cache — using runtime `query_as` not compile-time macros)
+- [ ] Commit the generated `.sqlx/` directory (contains cached query metadata for CI builds) — N/A, no compile-time checked queries
 
 ## Verification
 
-- [ ] `docker compose up -d db localstack` starts PostgreSQL and LocalStack
-- [ ] `cd packages/server && sqlx migrate run` applies the migration without errors
-- [ ] `psql` into the database and verify all three tables exist with correct columns
-- [ ] `scripts/init-localstack.sh` creates the S3 bucket
-- [ ] `aws --endpoint-url=http://localhost:4566 s3 ls` shows `cadmus-documents`
-- [ ] `cargo build` succeeds with the new query macros
-- [ ] `cargo test` passes (existing tests unaffected)
-- [ ] Server starts and runs migrations automatically on startup
+- [x] `docker compose up -d db localstack` starts PostgreSQL and LocalStack
+- [x] `cd packages/server && sqlx migrate run` applies the migration without errors
+- [x] `psql` into the database and verify all three tables exist with correct columns
+- [x] `scripts/init-localstack.sh` creates the S3 bucket
+- [x] `aws --endpoint-url=http://localhost:4566 s3 ls` shows `cadmus-documents`
+- [x] `cargo build` succeeds with the new query macros
+- [x] `cargo test` passes (existing tests unaffected)
+- [x] Server starts and runs migrations automatically on startup
 
 ## Files Created/Modified
 
