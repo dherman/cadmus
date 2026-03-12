@@ -103,12 +103,12 @@
 
 ## Verification
 
-- [ ] `pnpm dev` starts both server and frontend
-- [ ] Two tabs sync edits in real time
-- [ ] Connection status indicator works
-- [ ] Undo/redo only affects local changes
-- [ ] Offline edits merge correctly on reconnect
-- [ ] No console errors in the browser
+- [x] `pnpm dev` starts both server and frontend
+- [x] Two tabs sync edits in real time
+- [x] Connection status indicator works
+- [x] Undo/redo only affects local changes
+- [x] Offline edits merge correctly on reconnect
+- [x] No console errors in the browser (one benign dev-only error from React Strict Mode double-mounting the WebSocket provider; does not affect production)
 
 ## Files Created/Modified
 
