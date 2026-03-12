@@ -7,8 +7,7 @@ import type { Editor } from '@tiptap/core';
 // picked up by TS. We cast chain()/can() to `any` as a standard workaround.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const isMac =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 const mod = isMac ? '\u2318' : 'Ctrl';
 
 function ToolbarButton({
@@ -90,36 +89,26 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           onClick={() => (editor.chain().focus() as any).toggleCode().run()}
           disabled={!can.toggleCode()}
         />
-        <ToolbarButton
-          label="Link"
-          isActive={editor.isActive('link')}
-          onClick={handleLink}
-        />
+        <ToolbarButton label="Link" isActive={editor.isActive('link')} onClick={handleLink} />
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">
         <ToolbarButton
           label="H1"
           isActive={editor.isActive('heading', { level: 1 })}
-          onClick={() =>
-            (editor.chain().focus() as any).toggleHeading({ level: 1 }).run()
-          }
+          onClick={() => (editor.chain().focus() as any).toggleHeading({ level: 1 }).run()}
           disabled={!can.toggleHeading({ level: 1 })}
         />
         <ToolbarButton
           label="H2"
           isActive={editor.isActive('heading', { level: 2 })}
-          onClick={() =>
-            (editor.chain().focus() as any).toggleHeading({ level: 2 }).run()
-          }
+          onClick={() => (editor.chain().focus() as any).toggleHeading({ level: 2 }).run()}
           disabled={!can.toggleHeading({ level: 2 })}
         />
         <ToolbarButton
           label="H3"
           isActive={editor.isActive('heading', { level: 3 })}
-          onClick={() =>
-            (editor.chain().focus() as any).toggleHeading({ level: 3 }).run()
-          }
+          onClick={() => (editor.chain().focus() as any).toggleHeading({ level: 3 }).run()}
           disabled={!can.toggleHeading({ level: 3 })}
         />
       </div>
@@ -128,41 +117,31 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
         <ToolbarButton
           label="Bullet List"
           isActive={editor.isActive('bulletList')}
-          onClick={() =>
-            (editor.chain().focus() as any).toggleBulletList().run()
-          }
+          onClick={() => (editor.chain().focus() as any).toggleBulletList().run()}
           disabled={!can.toggleBulletList()}
         />
         <ToolbarButton
           label="Ordered List"
           isActive={editor.isActive('orderedList')}
-          onClick={() =>
-            (editor.chain().focus() as any).toggleOrderedList().run()
-          }
+          onClick={() => (editor.chain().focus() as any).toggleOrderedList().run()}
           disabled={!can.toggleOrderedList()}
         />
         <ToolbarButton
           label="Blockquote"
           isActive={editor.isActive('blockquote')}
-          onClick={() =>
-            (editor.chain().focus() as any).toggleBlockquote().run()
-          }
+          onClick={() => (editor.chain().focus() as any).toggleBlockquote().run()}
           disabled={!can.toggleBlockquote()}
         />
         <ToolbarButton
           label="Code Block"
           isActive={editor.isActive('codeBlock')}
-          onClick={() =>
-            (editor.chain().focus() as any).toggleCodeBlock().run()
-          }
+          onClick={() => (editor.chain().focus() as any).toggleCodeBlock().run()}
           disabled={!can.toggleCodeBlock()}
         />
         <ToolbarButton
           label="Horizontal Rule"
           isActive={false}
-          onClick={() =>
-            (editor.chain().focus() as any).setHorizontalRule().run()
-          }
+          onClick={() => (editor.chain().focus() as any).setHorizontalRule().run()}
         />
       </div>
     </div>
