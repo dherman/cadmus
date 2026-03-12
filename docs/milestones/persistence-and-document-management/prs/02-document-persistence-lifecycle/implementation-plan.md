@@ -2,16 +2,16 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Database Schema & Migrations) merged
-- [ ] PostgreSQL running with migrations applied
-- [ ] LocalStack running with `cadmus-documents` bucket created
+- [x] PR 1 (Database Schema & Migrations) merged
+- [x] PostgreSQL running with migrations applied
+- [x] LocalStack running with `cadmus-documents` bucket created
 
 ## Steps
 
 ### Step 1: Create the S3 storage module
 
-- [ ] Create `packages/server/src/documents/storage.rs`
-- [ ] Implement the S3 client wrapper:
+- [x] Create `packages/server/src/documents/storage.rs`
+- [x] Implement the S3 client wrapper:
 
 ```rust
 use aws_sdk_s3::Client as S3Client;
@@ -59,11 +59,11 @@ impl SnapshotStorage {
 }
 ```
 
-- [ ] Add `pub mod storage;` to `packages/server/src/documents/mod.rs`
+- [x] Add `pub mod storage;` to `packages/server/src/documents/mod.rs`
 
 ### Step 2: Add SnapshotStorage to AppState
 
-- [ ] In `packages/server/src/lib.rs`, add storage to `AppState`:
+- [x] In `packages/server/src/lib.rs`, add storage to `AppState`:
 
 ```rust
 pub struct AppState {
@@ -75,7 +75,7 @@ pub struct AppState {
 }
 ```
 
-- [ ] In `main.rs`, initialize `SnapshotStorage` with config values:
+- [x] In `main.rs`, initialize `SnapshotStorage` with config values:
 
 ```rust
 let storage = SnapshotStorage::new(
@@ -86,8 +86,8 @@ let storage = SnapshotStorage::new(
 
 ### Step 3: Implement document loading from persistent state
 
-- [ ] Update `SessionManager` to accept `Database` and `SnapshotStorage` references
-- [ ] Rewrite `get_or_load()` to load from storage when a session doesn't exist in memory:
+- [x] Update `SessionManager` to accept `Database` and `SnapshotStorage` references
+- [x] Rewrite `get_or_load()` to load from storage when a session doesn't exist in memory:
 
 ```rust
 pub async fn get_or_load(
@@ -130,11 +130,11 @@ pub async fn get_or_load(
 }
 ```
 
-- [ ] Add `DocumentSession::new_with_doc()` that accepts an existing `Doc` instead of creating an empty one
+- [x] Add `DocumentSession::new_with_doc()` that accepts an existing `Doc` instead of creating an empty one
 
 ### Step 4: Implement the update observation and logging
 
-- [ ] Add an update observer to `DocumentSession` that captures Yrs updates:
+- [x] Add an update observer to `DocumentSession` that captures Yrs updates:
 
 ```rust
 impl DocumentSession {
@@ -157,11 +157,11 @@ impl DocumentSession {
 }
 ```
 
-- [ ] Wire up update logging when a session is created in `get_or_load()`
+- [x] Wire up update logging when a session is created in `get_or_load()`
 
 ### Step 5: Implement the flush mechanism
 
-- [ ] Add flush state to `DocumentSession`:
+- [x] Add flush state to `DocumentSession`:
 
 ```rust
 pub struct DocumentSession {
@@ -173,7 +173,7 @@ pub struct DocumentSession {
 }
 ```
 
-- [ ] Implement the `flush()` method:
+- [x] Implement the `flush()` method:
 
 ```rust
 pub async fn flush(
@@ -206,7 +206,7 @@ pub async fn flush(
 }
 ```
 
-- [ ] Spawn a background flush task per session that waits for flush triggers:
+- [x] Spawn a background flush task per session that waits for flush triggers:
 
 ```rust
 async fn flush_loop(
@@ -234,11 +234,11 @@ async fn flush_loop(
 
 ### Step 6: Implement the unload mechanism
 
-- [ ] Add connection tracking to `DocumentSession`:
+- [x] Add connection tracking to `DocumentSession`:
   - Increment on WebSocket connect, decrement on disconnect
   - When count reaches 0, start 60s grace timer
 
-- [ ] Implement the grace period logic:
+- [x] Implement the grace period logic:
 
 ```rust
 pub async fn start_unload_timer(
@@ -260,21 +260,21 @@ pub async fn start_unload_timer(
 }
 ```
 
-- [ ] Update the WebSocket handler to track connects/disconnects:
+- [x] Update the WebSocket handler to track connects/disconnects:
   - Increment counter before subscribing to broadcast group
   - Decrement counter after subscription completes (client disconnected)
   - Start unload timer when counter reaches 0
 
 ### Step 7: Wire everything together
 
-- [ ] Update the WebSocket handler (`websocket/handler.rs`) to pass `db` and `storage` to `get_or_load()`
-- [ ] Ensure the update observer is started when sessions are created
-- [ ] Ensure the flush loop is spawned when sessions are created
-- [ ] Test the full lifecycle: create doc → edit → wait for flush → restart server → reconnect → verify state
+- [x] Update the WebSocket handler (`websocket/handler.rs`) to pass `db` and `storage` to `get_or_load()`
+- [x] Ensure the update observer is started when sessions are created
+- [x] Ensure the flush loop is spawned when sessions are created
+- [x] Test the full lifecycle: create doc → edit → wait for flush → restart server → reconnect → verify state
 
 ### Step 8: Integration tests
 
-- [ ] Write tests in `packages/server/tests/`:
+- [x] Write tests in `packages/server/tests/`:
 
 ```rust
 #[tokio::test]
