@@ -6,6 +6,17 @@ Eight milestones, sequenced so each is independently demoable and testable. The 
 
 Total estimated time: 12–18 weeks for a small team (1–2 developers).
 
+## Progress
+
+- [x] Milestone 1: Collaborative Editing Core
+- [ ] Milestone 2: Persistence and Document Management
+- [ ] Milestone 3: Auth and Permissions
+- [ ] Milestone 4: Node Sidecar and Markdown Export
+- [ ] Milestone 5: Comments
+- [ ] Milestone 6: Agent API and CLI
+- [ ] Milestone 7: Enterprise Foundations
+- [ ] Milestone 8: History UI
+
 ---
 
 ## Milestone 1: Collaborative Editing Core

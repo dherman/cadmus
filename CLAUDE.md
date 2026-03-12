@@ -12,7 +12,8 @@ When completing tasks from planning documents (implementation plans, milestone c
 
 - `docs/architecture/*.md` — architecture design documents
 - `docs/roadmap.md` — main roadmap listing all milestones
-- `docs/milestones/` — active and completed milestones, each in its own subdirectory:
+- `docs/milestones/` — active milestones, each in its own subdirectory:
+- `docs/history/` — completed milestones, same subdirectory structure as `docs/milestones/`; each contains:
   - `README.md` — describes the milestone and its success criteria
   - `prs/` — plans for the PRs needed to implement the milestone, sequenced in implementation order; each PR has:
     - `design.md` — design for the PR
