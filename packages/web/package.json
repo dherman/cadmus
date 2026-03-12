@@ -6,7 +6,9 @@
   "description": "Cadmus web client — React + Tiptap collaborative editor",
   "scripts": {
     "dev": "vite",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@cadmus/doc-schema": "workspace:*",

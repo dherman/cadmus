@@ -25,3 +25,6 @@ Thumbs.db
 
 # Cadmus CLI metadata (user-specific, not committed)
 .cadmus/
+
+# Thinkwell VSCode extension metadata (user-specific, not committed)
+**/.thinkwell/
