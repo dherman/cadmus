@@ -80,7 +80,6 @@
     }
     ```
 
-
 ### Step 4: Create the App Shell
 
 - [x] Create `web/src/App.tsx`:
