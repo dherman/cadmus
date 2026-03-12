@@ -25,12 +25,12 @@ Milestone 1 proved the collaborative editing stack works — but everything live
 
 The milestone is divided into four PRs, ordered by dependency. Each PR is independently mergeable and produces a testable artifact.
 
-| PR  | Title                                                                                        | Depends On          | Estimated Effort |
-| --- | -------------------------------------------------------------------------------------------- | ------------------- | ---------------- |
-| 1   | [Database Schema & Migrations](prs/01-database-schema-and-migrations/)                       | —                   | 1–2 days         |
-| 2   | [Document Persistence Lifecycle](prs/02-document-persistence-lifecycle/)                     | PR 1 (tables exist) | 2–3 days         |
-| 3   | [Document CRUD API](prs/03-document-crud-api/)                                               | PR 1 (tables exist) | 1–2 days         |
-| 4   | [Frontend Document Dashboard](prs/04-frontend-document-dashboard/)                           | PR 3 (REST API)     | 1–2 days         |
+| PR  | Title                                                                    | Depends On          | Estimated Effort |
+| --- | ------------------------------------------------------------------------ | ------------------- | ---------------- |
+| 1   | [Database Schema & Migrations](prs/01-database-schema-and-migrations/)   | —                   | 1–2 days         |
+| 2   | [Document Persistence Lifecycle](prs/02-document-persistence-lifecycle/) | PR 1 (tables exist) | 2–3 days         |
+| 3   | [Document CRUD API](prs/03-document-crud-api/)                           | PR 1 (tables exist) | 1–2 days         |
+| 4   | [Frontend Document Dashboard](prs/04-frontend-document-dashboard/)       | PR 3 (REST API)     | 1–2 days         |
 
 PRs 2 and 3 can be developed in parallel since both depend on PR 1 but not on each other.
 

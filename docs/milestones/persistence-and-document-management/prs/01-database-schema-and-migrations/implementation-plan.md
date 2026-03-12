@@ -160,21 +160,21 @@ pub struct DocumentRow {
 - [x] Add a `localstack` service to `docker-compose.yml`:
 
 ```yaml
-  localstack:
-    image: localstack/localstack:3
-    ports:
-      - '4566:4566'
-    environment:
-      - SERVICES=s3
-      - DEFAULT_REGION=us-east-1
+localstack:
+  image: localstack/localstack:3
+  ports:
+    - '4566:4566'
+  environment:
+    - SERVICES=s3
+    - DEFAULT_REGION=us-east-1
 ```
 
 - [x] Add `S3_ENDPOINT` to the server service environment:
 
 ```yaml
-  server:
-    environment:
-      - S3_ENDPOINT=http://localstack:4566
+server:
+  environment:
+    - S3_ENDPOINT=http://localstack:4566
 ```
 
 - [x] Create `scripts/init-localstack.sh` to create the S3 bucket:

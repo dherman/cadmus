@@ -36,10 +36,10 @@ After this PR, users land on a dashboard showing all documents, can create a new
 
 We add client-side routing with React Router. The app has two routes:
 
-| Path         | Component   | Description              |
-| ------------ | ----------- | ------------------------ |
-| `/`          | `Dashboard` | Document list and create |
-| `/docs/:id`  | `App`       | Editor (renamed/refactored from current `App`) |
+| Path        | Component   | Description                                    |
+| ----------- | ----------- | ---------------------------------------------- |
+| `/`         | `Dashboard` | Document list and create                       |
+| `/docs/:id` | `App`       | Editor (renamed/refactored from current `App`) |
 
 React Router is the standard choice for React SPAs. We use `BrowserRouter` with `createBrowserRouter` for data loading support.
 

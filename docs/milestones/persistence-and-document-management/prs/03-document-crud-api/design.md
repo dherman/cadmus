@@ -28,6 +28,7 @@ Returns all documents, ordered by most recently updated. No pagination for now (
 Creates a new document. Returns the created document metadata. Optionally accepts initial content (plain text treated as a document title — full markdown import comes with the sidecar in M4).
 
 Request:
+
 ```json
 {
   "title": "My New Document"
@@ -35,6 +36,7 @@ Request:
 ```
 
 Response (201):
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -70,6 +72,7 @@ This also unloads the document session from memory if it's currently active. Act
 Updates document title. Returns the updated document.
 
 Request:
+
 ```json
 {
   "title": "Updated Title"
@@ -77,6 +80,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -116,9 +120,9 @@ We intentionally omit `schema_version` and `snapshot_key` from the API response 
 
 | Scenario                    | Status Code | Response Body                          |
 | --------------------------- | ----------- | -------------------------------------- |
-| Document not found          | 404         | `{ "error": "Document not found" }`   |
-| Invalid UUID in path        | 400         | `{ "error": "Invalid document ID" }`  |
-| Missing title in create     | 400         | `{ "error": "Title is required" }`    |
+| Document not found          | 404         | `{ "error": "Document not found" }`    |
+| Invalid UUID in path        | 400         | `{ "error": "Invalid document ID" }`   |
+| Missing title in create     | 400         | `{ "error": "Title is required" }`     |
 | Database error              | 500         | `{ "error": "Internal server error" }` |
 | Delete with active sessions | 204         | (sessions closed, document deleted)    |
 

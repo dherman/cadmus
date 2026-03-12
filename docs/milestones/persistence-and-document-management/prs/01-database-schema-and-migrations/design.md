@@ -12,26 +12,26 @@ This PR creates the foundation that PRs 2 and 3 both build on. It's purely infra
 
 Stores document metadata. One row per document.
 
-| Column          | Type                   | Notes                                                        |
-| --------------- | ---------------------- | ------------------------------------------------------------ |
-| `id`            | `UUID PRIMARY KEY`     | Generated client-side (UUIDv4)                               |
-| `title`         | `TEXT NOT NULL`        | Display name, user-editable                                  |
-| `schema_version`| `INTEGER NOT NULL`     | ProseMirror schema version (currently 1)                     |
-| `snapshot_key`  | `TEXT`                 | S3 object key for the latest compacted Yrs snapshot, nullable until first flush |
-| `created_at`    | `TIMESTAMPTZ NOT NULL` | `DEFAULT NOW()`                                              |
-| `updated_at`    | `TIMESTAMPTZ NOT NULL` | `DEFAULT NOW()`, updated on every flush                      |
+| Column           | Type                   | Notes                                                                           |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------- |
+| `id`             | `UUID PRIMARY KEY`     | Generated client-side (UUIDv4)                                                  |
+| `title`          | `TEXT NOT NULL`        | Display name, user-editable                                                     |
+| `schema_version` | `INTEGER NOT NULL`     | ProseMirror schema version (currently 1)                                        |
+| `snapshot_key`   | `TEXT`                 | S3 object key for the latest compacted Yrs snapshot, nullable until first flush |
+| `created_at`     | `TIMESTAMPTZ NOT NULL` | `DEFAULT NOW()`                                                                 |
+| `updated_at`     | `TIMESTAMPTZ NOT NULL` | `DEFAULT NOW()`, updated on every flush                                         |
 
 ### `document_permissions` Table
 
 Created now but not enforced until Milestone 3 (Auth). Having the table in place means the schema migration is already done when we add auth.
 
-| Column        | Type                   | Notes                                                   |
-| ------------- | ---------------------- | ------------------------------------------------------- |
-| `id`          | `UUID PRIMARY KEY`     | Permission row ID                                       |
-| `document_id` | `UUID NOT NULL`        | FK → `documents(id) ON DELETE CASCADE`                  |
+| Column        | Type                   | Notes                                                                     |
+| ------------- | ---------------------- | ------------------------------------------------------------------------- |
+| `id`          | `UUID PRIMARY KEY`     | Permission row ID                                                         |
+| `document_id` | `UUID NOT NULL`        | FK → `documents(id) ON DELETE CASCADE`                                    |
 | `user_id`     | `UUID NOT NULL`        | FK → `users(id)` (deferred — no users table yet, so stored as plain UUID) |
-| `role`        | `TEXT NOT NULL`        | `'read'`, `'comment'`, or `'edit'`                      |
-| `created_at`  | `TIMESTAMPTZ NOT NULL` | `DEFAULT NOW()`                                         |
+| `role`        | `TEXT NOT NULL`        | `'read'`, `'comment'`, or `'edit'`                                        |
+| `created_at`  | `TIMESTAMPTZ NOT NULL` | `DEFAULT NOW()`                                                           |
 
 The `user_id` column references a `users` table that doesn't exist yet. We'll create it as a plain UUID column with no FK constraint for now and add the constraint in Milestone 3.
 
@@ -39,12 +39,12 @@ The `user_id` column references a `users` table that doesn't exist yet. We'll cr
 
 Append-only log of Yrs updates between snapshot compactions. Used for crash recovery — replay these on top of the latest snapshot to reconstruct the full document state.
 
-| Column        | Type                   | Notes                                                |
-| ------------- | ---------------------- | ---------------------------------------------------- |
-| `id`          | `BIGSERIAL PRIMARY KEY`| Auto-incrementing for ordering                       |
-| `document_id` | `UUID NOT NULL`        | FK → `documents(id) ON DELETE CASCADE`               |
-| `data`        | `BYTEA NOT NULL`       | Raw Yrs update binary                                |
-| `created_at`  | `TIMESTAMPTZ NOT NULL` | `DEFAULT NOW()`                                      |
+| Column        | Type                    | Notes                                  |
+| ------------- | ----------------------- | -------------------------------------- |
+| `id`          | `BIGSERIAL PRIMARY KEY` | Auto-incrementing for ordering         |
+| `document_id` | `UUID NOT NULL`         | FK → `documents(id) ON DELETE CASCADE` |
+| `data`        | `BYTEA NOT NULL`        | Raw Yrs update binary                  |
+| `created_at`  | `TIMESTAMPTZ NOT NULL`  | `DEFAULT NOW()`                        |
 
 Index: `(document_id, id)` for efficient range queries during document load.
 
@@ -74,11 +74,11 @@ Development needs an S3-compatible object store without requiring AWS credential
 
 ## Environment Variables
 
-| Variable       | Default                        | Notes                                    |
-| -------------- | ------------------------------ | ---------------------------------------- |
-| `DATABASE_URL` | `postgres://localhost/cadmus`  | Existing, unchanged                      |
-| `S3_ENDPOINT`  | (none)                         | Set to `http://localhost:4566` for LocalStack |
-| `S3_BUCKET`    | `cadmus-documents`             | Existing, unchanged                      |
+| Variable       | Default                       | Notes                                         |
+| -------------- | ----------------------------- | --------------------------------------------- |
+| `DATABASE_URL` | `postgres://localhost/cadmus` | Existing, unchanged                           |
+| `S3_ENDPOINT`  | (none)                        | Set to `http://localhost:4566` for LocalStack |
+| `S3_BUCKET`    | `cadmus-documents`            | Existing, unchanged                           |
 
 ## Error Handling
 
