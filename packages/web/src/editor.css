@@ -277,3 +277,68 @@ body {
 .ProseMirror a:hover {
   color: #1d4ed8;
 }
+
+/* Collaboration cursors */
+.collaboration-cursor {
+  border-left: 2px solid;
+  position: relative;
+}
+
+.collaboration-cursor-label {
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  font-size: 0.75rem;
+  color: white;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.collaboration-cursor:hover .collaboration-cursor-label {
+  opacity: 1;
+}
+
+/* Remote selection highlight (set inline by y-prosemirror) */
+.yRemoteSelection {
+  opacity: 0.35;
+}
+
+.yRemoteSelectionHead {
+  position: absolute;
+  border-left: 2px solid;
+  height: 1.2em;
+}
+
+/* Presence user list */
+.presence {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.presence-user {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.presence-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.presence-name {
+  font-size: 0.8125rem;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
