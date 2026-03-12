@@ -81,6 +81,64 @@ body {
   max-width: 720px;
 }
 
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: #d1d5db;
+  margin: 0 6px;
+}
+
+.toolbar-btn {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+  background: #e5e7eb;
+}
+
+.toolbar-btn.is-active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbar-btn:disabled:hover {
+  background: transparent;
+}
+
 /* ProseMirror content area */
 .ProseMirror {
   outline: none;

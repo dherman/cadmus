@@ -1,6 +1,7 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import { Collaboration } from '@tiptap/extension-collaboration';
 import { createExtensions } from '@cadmus/doc-schema';
+import { Toolbar } from './Toolbar';
 import type * as Y from 'yjs';
 import type { WebsocketProvider } from 'y-websocket';
 
@@ -21,6 +22,7 @@ export function Editor({ ydoc, provider: _provider }: EditorProps) {
 
   return (
     <div className="editor-wrapper">
+      <Toolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
   );
