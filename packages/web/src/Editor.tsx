@@ -1,11 +1,20 @@
 import { useEditor, EditorContent } from '@tiptap/react';
+import { Collaboration } from '@tiptap/extension-collaboration';
 import { createExtensions } from '@cadmus/doc-schema';
-import { sampleDocument } from './fixtures/sample-document';
+import type * as Y from 'yjs';
+import type { WebsocketProvider } from 'y-websocket';
 
-export function Editor() {
+interface EditorProps {
+  ydoc: Y.Doc;
+  provider: WebsocketProvider;
+}
+
+export function Editor({ ydoc, provider: _provider }: EditorProps) {
   const editor = useEditor({
-    extensions: createExtensions(),
-    content: sampleDocument,
+    extensions: [
+      ...createExtensions({ disableHistory: true }),
+      Collaboration.configure({ document: ydoc }),
+    ],
   });
 
   if (!editor) return null;
