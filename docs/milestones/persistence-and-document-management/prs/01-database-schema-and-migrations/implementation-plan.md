@@ -4,7 +4,7 @@
 
 - [x] Milestone 1 merged and working
 - [x] PostgreSQL 16 running locally (via Docker Compose or native)
-- [ ] SQLx CLI installed (`cargo install sqlx-cli --no-default-features --features postgres`)
+- [x] SQLx CLI installed (`cargo install sqlx-cli --no-default-features --features postgres`)
 
 ## Steps
 
