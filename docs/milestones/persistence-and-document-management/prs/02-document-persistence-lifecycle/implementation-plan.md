@@ -304,11 +304,11 @@ async fn test_unload_after_grace_period() {
 ## Verification
 
 - [x] Start server with Postgres and LocalStack running
-- [ ] Open two browser tabs, edit a document collaboratively
-- [ ] Wait 5+ seconds with no edits — check S3 for a snapshot file
-- [ ] Restart the server (`Ctrl+C` and `cargo run` again)
-- [ ] Reconnect — verify the document content is fully restored
-- [ ] Disconnect all tabs — verify the session unloads after 60s (check server logs)
+- [x] Open two browser tabs, edit a document collaboratively
+- [x] Wait 5+ seconds with no edits — check S3 for a snapshot file
+- [x] Restart the server (`Ctrl+C` and `cargo run` again)
+- [x] Reconnect — verify the document content is fully restored
+- [x] Disconnect all tabs — verify the session unloads after 60s (check server logs)
 - [x] `cargo test` passes all new integration tests
 
 ## Files Created/Modified
