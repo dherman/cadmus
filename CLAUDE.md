@@ -12,6 +12,10 @@ Always use the conventional-commits skill (`.skills/conventional-commits/SKILL.m
 
 When completing tasks from planning documents (implementation plans, milestone checklists, etc.), always check off the corresponding checkbox (`- [ ]` → `- [x]`) immediately after the task is done. Don't wait until the end — mark each task as completed as you go.
 
+## Green Tree Policy
+
+Always keep the tree green. If any test is failing, the task is not done until the test is fixed. Never dismiss a test failure as irrelevant — investigate and resolve it before considering work complete.
+
 ## Docs Structure
 
 - `docs/architecture/*.md` — architecture design documents
