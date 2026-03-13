@@ -3,6 +3,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 /// Database connection wrapper.
+#[derive(Clone)]
 pub struct Database {
     pub pool: PgPool,
 }

@@ -17,9 +17,16 @@ async fn main() {
         .await
         .expect("Failed to run database migrations");
 
+    let storage = documents::storage::SnapshotStorage::new(
+        &cfg.s3_bucket,
+        cfg.s3_endpoint.as_deref(),
+    )
+    .await;
+
     let state = Arc::new(AppState {
         db: database,
-        document_sessions: documents::SessionManager::new(),
+        document_sessions: Arc::new(documents::SessionManager::new()),
+        storage,
         sidecar: sidecar::SidecarClient::new(&cfg.sidecar_url),
         config: cfg,
     });

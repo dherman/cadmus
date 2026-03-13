@@ -10,27 +10,45 @@ use uuid::Uuid;
 use yrs::sync::Error;
 use yrs_axum::ws::AxumSink;
 
+use crate::errors::AppError;
 use crate::AppState;
 
 /// Handle WebSocket upgrade for real-time document collaboration.
 ///
 /// Flow:
-/// 1. Look up or create the document session.
+/// 1. Look up or load the document session from persistent storage.
 /// 2. Upgrade to WebSocket.
 /// 3. Subscribe the connection to the BroadcastGroup.
 /// 4. Run the y-sync protocol until the client disconnects.
+/// 5. Track connection count for unload lifecycle.
 pub async fn ws_upgrade(
     ws: WebSocketUpgrade,
     Path(doc_id): Path<Uuid>,
     State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
-    let session = state.document_sessions.get_or_load(doc_id).await;
-    ws.on_upgrade(move |socket| handle_ws(socket, session))
+) -> Result<impl IntoResponse, AppError> {
+    let session = state
+        .document_sessions
+        .get_or_load(doc_id, &state.db, &state.storage)
+        .await?;
+
+    // Track connection
+    session.add_connection();
+
+    let document_sessions = state.document_sessions.clone();
+    let db = state.db.clone();
+    let storage = state.storage.clone();
+
+    Ok(ws.on_upgrade(move |socket| {
+        handle_ws(socket, session, document_sessions, db, storage)
+    }))
 }
 
 async fn handle_ws(
     socket: axum::extract::ws::WebSocket,
     session: Arc<crate::documents::DocumentSession>,
+    session_manager: Arc<crate::documents::SessionManager>,
+    db: crate::db::Database,
+    storage: crate::documents::storage::SnapshotStorage,
 ) {
     tracing::info!("WebSocket connection opened for document {}", session.doc_id);
     let (sink, stream) = socket.split();
@@ -59,5 +77,15 @@ async fn handle_ws(
             session.doc_id,
             e
         ),
+    }
+
+    // Track disconnection
+    let remaining = session.remove_connection();
+    if remaining == 0 {
+        tracing::info!(
+            "Last client disconnected from document {}, starting unload timer",
+            session.doc_id
+        );
+        session_manager.start_unload_timer(session, db, storage);
     }
 }

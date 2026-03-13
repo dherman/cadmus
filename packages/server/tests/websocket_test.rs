@@ -1,6 +1,7 @@
 //! Integration tests for the Cadmus WebSocket server.
 //!
 //! These tests start a real server on a random port and connect to it.
+//! The WebSocket tests pre-load sessions directly to avoid needing a real database.
 
 use cadmus_server::{build_router, AppState};
 use futures_util::{SinkExt, StreamExt};
@@ -29,9 +30,16 @@ fn test_config() -> cadmus_server::config::Config {
 }
 
 async fn spawn_test_server() -> (String, Arc<AppState>) {
+    let storage = cadmus_server::documents::storage::SnapshotStorage::new(
+        "test-bucket",
+        Some("http://localhost:4566"),
+    )
+    .await;
+
     let state = Arc::new(AppState {
         db: cadmus_server::db::Database::connect_lazy("postgres://localhost/cadmus_test").unwrap(),
-        document_sessions: cadmus_server::documents::SessionManager::new(),
+        document_sessions: Arc::new(cadmus_server::documents::SessionManager::new()),
+        storage,
         sidecar: cadmus_server::sidecar::SidecarClient::new("http://localhost:3001"),
         config: test_config(),
     });
@@ -47,6 +55,22 @@ async fn spawn_test_server() -> (String, Arc<AppState>) {
     });
 
     (format!("http://127.0.0.1:{}", addr.port()), state)
+}
+
+/// Pre-load a document session directly into the session manager
+/// (bypasses database lookup, for tests that don't need persistence).
+async fn preload_session(
+    state: &AppState,
+    doc_id: Uuid,
+) -> Arc<cadmus_server::documents::DocumentSession> {
+    use cadmus_server::documents::DocumentSession;
+    let session = DocumentSession::new(doc_id).await;
+    // Access sessions via get_or_load would require DB; insert directly instead.
+    // We use a helper that inserts into the DashMap through the public API.
+    // Since get_or_load now requires db/storage, we preload by creating the session
+    // and relying on the fact that get_or_load checks the cache first.
+    state.document_sessions.preload(doc_id, session.clone());
+    session
 }
 
 /// Encode a y-sync SyncStep1 message with an empty state vector.
@@ -73,7 +97,7 @@ async fn websocket_connects_to_document() {
 
     // Pre-load a document session
     let doc_id = Uuid::new_v4();
-    state.document_sessions.get_or_load(doc_id).await;
+    preload_session(&state, doc_id).await;
 
     let ws_url = format!(
         "{}/api/docs/{}/ws",
@@ -129,7 +153,7 @@ async fn two_clients_sync_edits() {
 
     // Pre-load a shared document session
     let doc_id = Uuid::new_v4();
-    let session = state.document_sessions.get_or_load(doc_id).await;
+    let session = preload_session(&state, doc_id).await;
 
     let ws_url = format!(
         "{}/api/docs/{}/ws",
