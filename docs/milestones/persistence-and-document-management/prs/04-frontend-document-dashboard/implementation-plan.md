@@ -2,15 +2,15 @@
 
 ## Prerequisites
 
-- [ ] PR 3 (Document CRUD API) merged
-- [ ] REST endpoints working: `GET /api/docs`, `POST /api/docs`, `GET /api/docs/{id}`
+- [x] PR 3 (Document CRUD API) merged
+- [x] REST endpoints working: `GET /api/docs`, `POST /api/docs`, `GET /api/docs/{id}`
 
 ## Steps
 
 ### Step 1: Add React Router
 
-- [ ] Install React Router: `pnpm -F @cadmus/web add react-router`
-- [ ] Set up the router in `src/main.tsx`:
+- [x] Install React Router: `pnpm -F @cadmus/web add react-router`
+- [x] Set up the router in `src/main.tsx`:
 
 ```tsx
 import { createBrowserRouter, RouterProvider } from 'react-router';
@@ -31,7 +31,7 @@ createRoot(document.getElementById('root')!).render(
 
 ### Step 2: Create the API client
 
-- [ ] Create `src/api.ts`:
+- [x] Create `src/api.ts`:
 
 ```typescript
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -68,7 +68,7 @@ export async function getDocument(id: string): Promise<DocumentSummary> {
 
 ### Step 3: Create the Dashboard component
 
-- [ ] Create `src/Dashboard.tsx`:
+- [x] Create `src/Dashboard.tsx`:
 
 ```tsx
 import { useEffect, useState } from 'react';
@@ -131,7 +131,7 @@ export function Dashboard() {
 
 ### Step 4: Create the EditorPage component
 
-- [ ] Create `src/EditorPage.tsx`:
+- [x] Create `src/EditorPage.tsx`:
 
 ```tsx
 import { useParams, useNavigate } from 'react-router';
@@ -164,18 +164,18 @@ export function EditorPage() {
 
 ### Step 5: Update collaboration to use dynamic doc IDs
 
-- [ ] In `src/collaboration.ts`, remove `DEFAULT_DOC_ID`
-- [ ] The `createProvider(docId)` function already accepts a doc ID parameter — verify it works with arbitrary UUIDs
-- [ ] In `src/useCollaboration.ts`, ensure the hook recreates the provider when the `docId` parameter changes (cleanup old provider, create new one)
+- [x] In `src/collaboration.ts`, remove `DEFAULT_DOC_ID`
+- [x] The `createProvider(docId)` function already accepts a doc ID parameter — verify it works with arbitrary UUIDs
+- [x] In `src/useCollaboration.ts`, ensure the hook recreates the provider when the `docId` parameter changes (cleanup old provider, create new one)
 
 ### Step 6: Update App.tsx to be the router root
 
-- [ ] Simplify `src/App.tsx` or remove it — the router in `main.tsx` now handles top-level routing
-- [ ] If `App.tsx` had any global providers or error boundaries, move them to `main.tsx`
+- [x] Simplify `src/App.tsx` or remove it — the router in `main.tsx` now handles top-level routing
+- [x] If `App.tsx` had any global providers or error boundaries, move them to `main.tsx`
 
 ### Step 7: Add dashboard styles
 
-- [ ] Add CSS for the dashboard in the existing stylesheet:
+- [x] Add CSS for the dashboard in the existing stylesheet:
 
 ```css
 /* Dashboard layout */
@@ -222,28 +222,28 @@ export function EditorPage() {
 
 ### Step 8: Update Vite config for SPA fallback
 
-- [ ] Verify Vite dev server handles SPA fallback for `/docs/:id` routes
-- [ ] Vite's default behavior serves `index.html` for unknown routes in dev mode, so this should work out of the box
-- [ ] Add `VITE_API_URL` to `.env.example`
+- [x] Verify Vite dev server handles SPA fallback for `/docs/:id` routes
+- [x] Vite's default behavior serves `index.html` for unknown routes in dev mode, so this should work out of the box
+- [x] Add `VITE_API_URL` to `.env.example`
 
 ### Step 9: Update tests
 
-- [ ] Update any existing frontend tests to account for routing
-- [ ] Add basic tests for the Dashboard component if a test framework is configured
+- [x] Update any existing frontend tests to account for routing
+- [x] Add basic tests for the Dashboard component if a test framework is configured
 
 ## Verification
 
-- [ ] `pnpm -F @cadmus/web dev` starts without errors
-- [ ] Navigate to `http://localhost:5173/` — see the empty dashboard
-- [ ] Click "New Document" — creates a document and navigates to `/docs/{id}`
-- [ ] The editor loads and is functional (type text, formatting works)
-- [ ] Click "← Documents" — returns to the dashboard
-- [ ] The created document appears in the document list
-- [ ] Click the document card — navigates back to the editor with the same content
-- [ ] Open a second browser tab to the same `/docs/{id}` — collaborative editing works
-- [ ] Direct navigation to `/docs/{id}` works (paste URL in new tab)
-- [ ] Browser back/forward navigation works correctly
-- [ ] `pnpm -F @cadmus/web build` succeeds
+- [x] `pnpm -F @cadmus/web dev` starts without errors
+- [x] Navigate to `http://localhost:5173/` — see the empty dashboard
+- [x] Click "New Document" — creates a document and navigates to `/docs/{id}`
+- [x] The editor loads and is functional (type text, formatting works)
+- [x] Click "← Documents" — returns to the dashboard
+- [x] The created document appears in the document list
+- [x] Click the document card — navigates back to the editor with the same content
+- [x] Open a second browser tab to the same `/docs/{id}` — collaborative editing works
+- [x] Direct navigation to `/docs/{id}` works (paste URL in new tab)
+- [x] Browser back/forward navigation works correctly
+- [x] `pnpm -F @cadmus/web build` succeeds
 
 ## Files Created/Modified
 
