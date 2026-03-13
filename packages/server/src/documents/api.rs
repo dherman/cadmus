@@ -78,7 +78,7 @@ pub async fn create_document(
     let id = Uuid::new_v4();
     let row = state
         .db
-        .create_document(id, body.title.trim())
+        .create_document(id, body.title.trim(), None)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 

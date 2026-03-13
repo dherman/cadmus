@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod config;
 pub mod db;
 pub mod documents;
@@ -58,7 +59,13 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/docs/{id}/comments",
             post(documents::api::create_comment),
         )
-        // TODO: Auth endpoints, history endpoints, token management
+        // Auth endpoints
+        .route("/api/auth/register", post(auth::handlers::register))
+        .route("/api/auth/login", post(auth::handlers::login))
+        .route("/api/auth/refresh", post(auth::handlers::refresh))
+        .route("/api/auth/ws-token", post(auth::handlers::ws_token))
+        .route("/api/auth/me", get(auth::handlers::me))
+        // TODO: history endpoints, token management
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)

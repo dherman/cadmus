@@ -19,6 +19,17 @@ pub struct DocumentRow {
     pub updated_at: DateTime<Utc>,
 }
 
+/// A row from the `users` table.
+#[derive(Debug, sqlx::FromRow)]
+pub struct UserRow {
+    pub id: Uuid,
+    pub email: String,
+    pub display_name: String,
+    pub password_hash: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 impl Database {
     pub async fn connect(url: &str) -> Result<Self, sqlx::Error> {
         let pool = PgPool::connect(url).await?;
@@ -32,13 +43,61 @@ impl Database {
         Ok(Self { pool })
     }
 
-    pub async fn create_document(&self, id: Uuid, title: &str) -> Result<DocumentRow, sqlx::Error> {
+    // ── User queries ──
+
+    pub async fn create_user(
+        &self,
+        id: Uuid,
+        email: &str,
+        display_name: &str,
+        password_hash: &str,
+    ) -> Result<UserRow, sqlx::Error> {
+        sqlx::query_as::<_, UserRow>(
+            r#"INSERT INTO users (id, email, display_name, password_hash)
+               VALUES ($1, $2, $3, $4)
+               RETURNING id, email, display_name, password_hash, created_at, updated_at"#,
+        )
+        .bind(id)
+        .bind(email)
+        .bind(display_name)
+        .bind(password_hash)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    pub async fn get_user_by_id(&self, id: Uuid) -> Result<Option<UserRow>, sqlx::Error> {
+        sqlx::query_as::<_, UserRow>(
+            "SELECT id, email, display_name, password_hash, created_at, updated_at FROM users WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+    }
+
+    pub async fn get_user_by_email(&self, email: &str) -> Result<Option<UserRow>, sqlx::Error> {
+        sqlx::query_as::<_, UserRow>(
+            "SELECT id, email, display_name, password_hash, created_at, updated_at FROM users WHERE email = $1",
+        )
+        .bind(email)
+        .fetch_optional(&self.pool)
+        .await
+    }
+
+    // ── Document queries ──
+
+    pub async fn create_document(
+        &self,
+        id: Uuid,
+        title: &str,
+        created_by: Option<Uuid>,
+    ) -> Result<DocumentRow, sqlx::Error> {
         sqlx::query_as::<_, DocumentRow>(
-            r#"INSERT INTO documents (id, title) VALUES ($1, $2)
+            r#"INSERT INTO documents (id, title, created_by) VALUES ($1, $2, $3)
                RETURNING id, title, schema_version, snapshot_key, created_at, updated_at"#,
         )
         .bind(id)
         .bind(title)
+        .bind(created_by)
         .fetch_one(&self.pool)
         .await
     }
