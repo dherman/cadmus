@@ -28,6 +28,9 @@ fn s3_endpoint() -> String {
 
 const S3_BUCKET: &str = "cadmus-documents";
 
+/// A unique counter to generate unique emails per test invocation.
+static TEST_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 async fn spawn_test_server() -> Option<String> {
     if should_skip() {
         return None;
@@ -76,6 +79,25 @@ async fn spawn_test_server() -> Option<String> {
     Some(format!("http://127.0.0.1:{}", addr.port()))
 }
 
+/// Register a test user and return the access token.
+async fn register_test_user(client: &reqwest::Client, base_url: &str) -> String {
+    let n = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let resp = client
+        .post(format!("{base_url}/api/auth/register"))
+        .json(&serde_json::json!({
+            "email": format!("testuser{n}@example.com"),
+            "display_name": format!("Test User {n}"),
+            "password": "password123"
+        }))
+        .send()
+        .await
+        .expect("register request failed");
+
+    assert_eq!(resp.status(), 201, "register should succeed");
+    let body: serde_json::Value = resp.json().await.unwrap();
+    body["access_token"].as_str().unwrap().to_string()
+}
+
 #[tokio::test]
 async fn test_create_and_list_documents() {
     let Some(base_url) = spawn_test_server().await else {
@@ -83,10 +105,12 @@ async fn test_create_and_list_documents() {
     };
 
     let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
 
     // Create a document
     let resp = client
         .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
         .json(&serde_json::json!({ "title": "Test Doc" }))
         .send()
         .await
@@ -103,6 +127,7 @@ async fn test_create_and_list_documents() {
     // List documents — should include the created one
     let resp = client
         .get(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
         .send()
         .await
         .expect("list request failed");
@@ -117,6 +142,7 @@ async fn test_create_and_list_documents() {
     // Cleanup
     client
         .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .send()
         .await
         .ok();
@@ -129,9 +155,11 @@ async fn test_create_document_rejects_empty_title() {
     };
 
     let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
 
     let resp = client
         .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
         .json(&serde_json::json!({ "title": "   " }))
         .send()
         .await
@@ -147,10 +175,12 @@ async fn test_get_document() {
     };
 
     let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
 
     // Create a doc
     let resp = client
         .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
         .json(&serde_json::json!({ "title": "Get Test" }))
         .send()
         .await
@@ -161,6 +191,7 @@ async fn test_get_document() {
     // Get it
     let resp = client
         .get(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .send()
         .await
         .unwrap();
@@ -174,6 +205,7 @@ async fn test_get_document() {
         .get(format!(
             "{base_url}/api/docs/00000000-0000-0000-0000-000000000000"
         ))
+        .bearer_auth(&token)
         .send()
         .await
         .unwrap();
@@ -182,6 +214,7 @@ async fn test_get_document() {
     // Cleanup
     client
         .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .send()
         .await
         .ok();
@@ -194,10 +227,12 @@ async fn test_delete_document() {
     };
 
     let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
 
     // Create a doc
     let resp = client
         .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
         .json(&serde_json::json!({ "title": "Delete Test" }))
         .send()
         .await
@@ -208,6 +243,7 @@ async fn test_delete_document() {
     // Delete it
     let resp = client
         .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .send()
         .await
         .unwrap();
@@ -216,6 +252,7 @@ async fn test_delete_document() {
     // Verify it's gone
     let resp = client
         .get(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .send()
         .await
         .unwrap();
@@ -224,6 +261,7 @@ async fn test_delete_document() {
     // Delete nonexistent → 404
     let resp = client
         .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .send()
         .await
         .unwrap();
@@ -237,10 +275,12 @@ async fn test_update_document_title() {
     };
 
     let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
 
     // Create a doc
     let resp = client
         .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
         .json(&serde_json::json!({ "title": "Original Title" }))
         .send()
         .await
@@ -251,6 +291,7 @@ async fn test_update_document_title() {
     // Rename it
     let resp = client
         .patch(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .json(&serde_json::json!({ "title": "Renamed Title" }))
         .send()
         .await
@@ -263,6 +304,7 @@ async fn test_update_document_title() {
     // Rename with empty title → 400
     let resp = client
         .patch(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .json(&serde_json::json!({ "title": "" }))
         .send()
         .await
@@ -274,6 +316,7 @@ async fn test_update_document_title() {
         .patch(format!(
             "{base_url}/api/docs/00000000-0000-0000-0000-000000000000"
         ))
+        .bearer_auth(&token)
         .json(&serde_json::json!({ "title": "Nope" }))
         .send()
         .await
@@ -283,9 +326,108 @@ async fn test_update_document_title() {
     // Cleanup
     client
         .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
         .send()
         .await
         .ok();
+}
+
+#[tokio::test]
+async fn test_unauthenticated_request_returns_401() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+
+    // No Authorization header → 401
+    let resp = client
+        .get(format!("{base_url}/api/docs"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 401);
+}
+
+#[tokio::test]
+async fn test_expired_token_returns_401() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+
+    // Manually create an expired token
+    use chrono::Utc;
+    use jsonwebtoken::{encode, EncodingKey, Header};
+
+    #[derive(serde::Serialize)]
+    struct Claims {
+        sub: String,
+        email: Option<String>,
+        name: Option<String>,
+        #[serde(rename = "type")]
+        token_type: String,
+        iat: i64,
+        exp: i64,
+    }
+
+    let now = Utc::now().timestamp();
+    let claims = Claims {
+        sub: uuid::Uuid::new_v4().to_string(),
+        email: Some("expired@example.com".to_string()),
+        name: Some("Expired User".to_string()),
+        token_type: "access".to_string(),
+        iat: now - 1000,
+        exp: now - 500, // expired
+    };
+    let expired_token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(b"test-secret"),
+    )
+    .unwrap();
+
+    let resp = client
+        .get(format!("{base_url}/api/docs"))
+        .bearer_auth(&expired_token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 401);
+}
+
+#[tokio::test]
+async fn test_refresh_token_rejected_as_access_token() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+
+    // Register to get a refresh token
+    let n = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let resp = client
+        .post(format!("{base_url}/api/auth/register"))
+        .json(&serde_json::json!({
+            "email": format!("refreshtest{n}@example.com"),
+            "display_name": "Refresh Tester",
+            "password": "password123"
+        }))
+        .send()
+        .await
+        .unwrap();
+    let body: serde_json::Value = resp.json().await.unwrap();
+    let refresh_token = body["refresh_token"].as_str().unwrap();
+
+    // Use refresh token as access token → 401
+    let resp = client
+        .get(format!("{base_url}/api/docs"))
+        .bearer_auth(refresh_token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 401);
 }
 
 #[tokio::test]

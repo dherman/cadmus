@@ -1,10 +1,11 @@
 use axum::extract::State;
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
+use super::middleware::AuthUser;
 use crate::auth::{jwt, password};
 use crate::errors::AppError;
 use crate::AppState;
@@ -56,19 +57,6 @@ pub struct TokenResponse {
 pub struct WsTokenResponse {
     pub ws_token: String,
     pub expires_in: u64,
-}
-
-// ── Helpers ──
-
-fn extract_bearer_token(headers: &HeaderMap) -> Result<&str, AppError> {
-    let header = headers
-        .get("authorization")
-        .and_then(|v| v.to_str().ok())
-        .ok_or_else(|| AppError::Unauthorized("Missing authorization header".to_string()))?;
-
-    header
-        .strip_prefix("Bearer ")
-        .ok_or_else(|| AppError::Unauthorized("Invalid authorization header".to_string()))
 }
 
 // ── Handlers ──
@@ -196,18 +184,10 @@ pub async fn refresh(
 }
 
 pub async fn ws_token(
+    auth: AuthUser,
     State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
 ) -> Result<Json<WsTokenResponse>, AppError> {
-    let token = extract_bearer_token(&headers)?;
-    let claims = jwt::validate_token(token, "access", &state.config.jwt_secret)?;
-
-    let user_id: Uuid = claims
-        .sub
-        .parse()
-        .map_err(|_| AppError::Unauthorized("Invalid or expired token".to_string()))?;
-
-    let ws_token = jwt::create_ws_token(user_id, &state.config.jwt_secret)?;
+    let ws_token = jwt::create_ws_token(auth.user_id, &state.config.jwt_secret)?;
 
     Ok(Json(WsTokenResponse {
         ws_token,
@@ -215,28 +195,10 @@ pub async fn ws_token(
     }))
 }
 
-pub async fn me(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-) -> Result<Json<UserProfile>, AppError> {
-    let token = extract_bearer_token(&headers)?;
-    let claims = jwt::validate_token(token, "access", &state.config.jwt_secret)?;
-
-    let user_id: Uuid = claims
-        .sub
-        .parse()
-        .map_err(|_| AppError::Unauthorized("Invalid or expired token".to_string()))?;
-
-    let user = state
-        .db
-        .get_user_by_id(user_id)
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or_else(|| AppError::Unauthorized("Invalid or expired token".to_string()))?;
-
-    Ok(Json(UserProfile {
-        id: user.id,
-        email: user.email,
-        display_name: user.display_name,
-    }))
+pub async fn me(auth: AuthUser) -> Json<UserProfile> {
+    Json(UserProfile {
+        id: auth.user_id,
+        email: auth.email,
+        display_name: auth.display_name,
+    })
 }
