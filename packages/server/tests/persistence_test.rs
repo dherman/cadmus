@@ -62,7 +62,7 @@ async fn test_document_persists_across_restart() {
 
     // Create a document in the database
     let doc_id = Uuid::new_v4();
-    db.create_document(doc_id, "Persistence Test")
+    db.create_document(doc_id, "Persistence Test", None)
         .await
         .expect("failed to create document");
 
@@ -128,7 +128,7 @@ async fn test_update_log_crash_recovery() {
 
     // Create a document
     let doc_id = Uuid::new_v4();
-    db.create_document(doc_id, "Crash Recovery Test")
+    db.create_document(doc_id, "Crash Recovery Test", None)
         .await
         .expect("failed to create document");
 
@@ -195,7 +195,7 @@ async fn test_flush_clears_update_log() {
 
     // Create a document
     let doc_id = Uuid::new_v4();
-    db.create_document(doc_id, "Flush Clears Log Test")
+    db.create_document(doc_id, "Flush Clears Log Test", None)
         .await
         .expect("failed to create document");
 

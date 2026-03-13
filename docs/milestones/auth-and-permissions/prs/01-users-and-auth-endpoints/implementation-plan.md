@@ -3,20 +3,20 @@
 ## Prerequisites
 
 - [x] Milestone 2 merged and working
-- [ ] PostgreSQL running with M2 migrations applied
-- [ ] `argon2` crate available on crates.io
+- [x] PostgreSQL running with M2 migrations applied
+- [x] `argon2` crate available on crates.io
 
 ## Steps
 
 ### Step 1: Add new dependencies to Cargo.toml
 
-- [ ] Add `argon2 = "0.5"` to `packages/server/Cargo.toml`
-- [ ] Add `rand = "0.8"` if not already a transitive dependency (needed for salt generation)
-- [ ] Verify `jsonwebtoken = "9"` is already present (it is)
+- [x] Add `argon2 = "0.5"` to `packages/server/Cargo.toml`
+- [x] Add `rand = "0.8"` if not already a transitive dependency (needed for salt generation)
+- [x] Verify `jsonwebtoken = "9"` is already present (it is)
 
 ### Step 2: Create the users migration
 
-- [ ] Create `packages/server/migrations/20260312000002_users.sql`:
+- [x] Create `packages/server/migrations/20260312000002_users.sql`:
 
 ```sql
 -- Users table
@@ -42,7 +42,7 @@ ALTER TABLE document_permissions
 
 ### Step 3: Add user database methods
 
-- [ ] Add `UserRow` struct to `packages/server/src/db.rs`:
+- [x] Add `UserRow` struct to `packages/server/src/db.rs`:
 
 ```rust
 #[derive(Debug, sqlx::FromRow)]
@@ -56,7 +56,7 @@ pub struct UserRow {
 }
 ```
 
-- [ ] Add user query methods to `Database`:
+- [x] Add user query methods to `Database`:
 
 ```rust
 pub async fn create_user(&self, id: Uuid, email: &str, display_name: &str, password_hash: &str) -> Result<UserRow, sqlx::Error>;
@@ -64,12 +64,12 @@ pub async fn get_user_by_id(&self, id: Uuid) -> Result<Option<UserRow>, sqlx::Er
 pub async fn get_user_by_email(&self, email: &str) -> Result<Option<UserRow>, sqlx::Error>;
 ```
 
-- [ ] Update `create_document` to accept an optional `created_by: Option<Uuid>` parameter
+- [x] Update `create_document` to accept an optional `created_by: Option<Uuid>` parameter
 
 ### Step 4: Create the password hashing module
 
-- [ ] Create `packages/server/src/auth/mod.rs` with `pub mod password; pub mod jwt; pub mod handlers;`
-- [ ] Create `packages/server/src/auth/password.rs`:
+- [x] Create `packages/server/src/auth/mod.rs` with `pub mod password; pub mod jwt; pub mod handlers;`
+- [x] Create `packages/server/src/auth/password.rs`:
 
 ```rust
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
@@ -96,7 +96,7 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, AppError> {
 
 ### Step 5: Create the JWT module
 
-- [ ] Create `packages/server/src/auth/jwt.rs`:
+- [x] Create `packages/server/src/auth/jwt.rs`:
 
 ```rust
 use chrono::Utc;
@@ -127,12 +127,12 @@ pub fn create_ws_token(user_id: Uuid, secret: &str) -> Result<String, AppError>;
 pub fn validate_token(token: &str, expected_type: &str, secret: &str) -> Result<Claims, AppError>;
 ```
 
-- [ ] Implement all four functions using `jsonwebtoken::encode` / `decode`
-- [ ] `validate_token` checks both signature validity and the `type` claim
+- [x] Implement all four functions using `jsonwebtoken::encode` / `decode`
+- [x] `validate_token` checks both signature validity and the `type` claim
 
 ### Step 6: Create auth request/response types
 
-- [ ] In `packages/server/src/auth/handlers.rs`, define:
+- [x] In `packages/server/src/auth/handlers.rs`, define:
 
 ```rust
 #[derive(Deserialize)]
@@ -183,7 +183,7 @@ pub struct WsTokenResponse {
 
 ### Step 7: Implement auth handlers
 
-- [ ] Implement `register` handler:
+- [x] Implement `register` handler:
   - Validate email (contains `@`, trim, lowercase), display_name (non-empty), password (≥8 chars)
   - Check for existing user with same email → 409 Conflict
   - Hash password with `auth::password::hash_password`
@@ -191,31 +191,31 @@ pub struct WsTokenResponse {
   - Issue access + refresh tokens
   - Return `AuthResponse` with 201 status
 
-- [ ] Implement `login` handler:
+- [x] Implement `login` handler:
   - Look up user by email (lowercased, trimmed)
   - If not found → 401 "Invalid email or password"
   - Verify password → if mismatch, 401 "Invalid email or password"
   - Issue access + refresh tokens
   - Return `AuthResponse`
 
-- [ ] Implement `refresh` handler:
+- [x] Implement `refresh` handler:
   - Validate refresh token (type must be "refresh")
   - Look up user by ID from claims (ensures user still exists)
   - Issue new access token only (refresh token stays the same)
   - Return `TokenResponse`
 
-- [ ] Implement `ws_token` handler:
+- [x] Implement `ws_token` handler:
   - This handler requires an access token (will be enforced via extractor in PR 2; for now, manually parse the Authorization header)
   - Issue a ws-token for the authenticated user
   - Return `WsTokenResponse`
 
-- [ ] Implement `me` handler:
+- [x] Implement `me` handler:
   - Parse access token from Authorization header
   - Look up user, return `UserProfile`
 
 ### Step 8: Register auth routes
 
-- [ ] In `packages/server/src/lib.rs`:
+- [x] In `packages/server/src/lib.rs`:
   - Add `pub mod auth;`
   - Add routes:
 
@@ -229,18 +229,18 @@ pub struct WsTokenResponse {
 
 ### Step 9: Tests
 
-- [ ] Write unit tests for password hashing in `auth/password.rs`:
+- [x] Write unit tests for password hashing in `auth/password.rs`:
   - Hash and verify a valid password
   - Verify returns false for wrong password
   - Hash produces different output for same input (salt is random)
 
-- [ ] Write unit tests for JWT in `auth/jwt.rs`:
+- [x] Write unit tests for JWT in `auth/jwt.rs`:
   - Create and validate an access token
   - Create and validate a refresh token
   - Reject an expired token
   - Reject a token with wrong type (use refresh token as access)
 
-- [ ] Write integration tests in `packages/server/tests/auth.rs`:
+- [x] Write integration tests in `packages/server/tests/auth_test.rs`:
   - Register a new user → 201 with valid tokens
   - Register with duplicate email → 409
   - Register with invalid fields (missing email, short password) → 400
@@ -254,16 +254,16 @@ pub struct WsTokenResponse {
 
 ## Verification
 
-- [ ] `cargo build` succeeds with new dependencies
-- [ ] `sqlx migrate run` applies the users migration
-- [ ] `psql` shows `users` table with correct columns
-- [ ] `psql` shows FK constraint on `document_permissions.user_id`
-- [ ] `psql` shows `created_by` column on `documents` table
-- [ ] Registration creates a user in the database with a hashed password
-- [ ] Login returns valid JWTs
-- [ ] Refresh extends session without re-authentication
-- [ ] `cargo test` passes all new and existing tests
-- [ ] Existing document endpoints still work (no auth enforced yet)
+- [x] `cargo build` succeeds with new dependencies
+- [x] `sqlx migrate run` applies the users migration
+- [x] `psql` shows `users` table with correct columns
+- [x] `psql` shows FK constraint on `document_permissions.user_id`
+- [x] `psql` shows `created_by` column on `documents` table
+- [x] Registration creates a user in the database with a hashed password
+- [x] Login returns valid JWTs
+- [x] Refresh extends session without re-authentication
+- [x] `cargo test` passes all new and existing tests
+- [x] Existing document endpoints still work (no auth enforced yet)
 
 ## Files Created/Modified
 
@@ -275,4 +275,4 @@ pub struct WsTokenResponse {
 - `packages/server/src/auth/handlers.rs` (new)
 - `packages/server/src/db.rs` (modified — add UserRow, user queries, update create_document)
 - `packages/server/src/lib.rs` (modified — add auth module, auth routes)
-- `packages/server/tests/auth.rs` (new)
+- `packages/server/tests/auth_test.rs` (new)
