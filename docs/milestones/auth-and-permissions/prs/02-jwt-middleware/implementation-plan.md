@@ -203,13 +203,13 @@ pub async fn create_permission(
 ## Verification
 
 - [x] `cargo build` succeeds
-- [ ] All document endpoints return 401 without a valid token
-- [ ] All document endpoints work with a valid access token
-- [ ] `POST /api/docs` creates a document with `created_by` set to the authenticated user
-- [ ] `POST /api/docs` creates an `edit` permission entry for the creator
-- [ ] Auth endpoints (register, login, refresh) still work without tokens
-- [ ] Health endpoint works without tokens
-- [ ] `cargo test` passes all tests (existing tests updated)
+- [x] All document endpoints return 401 without a valid token
+- [x] All document endpoints work with a valid access token
+- [x] `POST /api/docs` creates a document with `created_by` set to the authenticated user
+- [x] `POST /api/docs` creates an `edit` permission entry for the creator
+- [x] Auth endpoints (register, login, refresh) still work without tokens
+- [x] Health endpoint works without tokens
+- [x] `cargo test` passes all tests (existing tests updated)
 
 ## Files Created/Modified
 

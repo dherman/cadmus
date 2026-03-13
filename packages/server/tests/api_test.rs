@@ -82,10 +82,11 @@ async fn spawn_test_server() -> Option<String> {
 /// Register a test user and return the access token.
 async fn register_test_user(client: &reqwest::Client, base_url: &str) -> String {
     let n = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let unique = uuid::Uuid::new_v4();
     let resp = client
         .post(format!("{base_url}/api/auth/register"))
         .json(&serde_json::json!({
-            "email": format!("testuser{n}@example.com"),
+            "email": format!("testuser{n}-{unique}@example.com"),
             "display_name": format!("Test User {n}"),
             "password": "password123"
         }))
@@ -407,10 +408,11 @@ async fn test_refresh_token_rejected_as_access_token() {
 
     // Register to get a refresh token
     let n = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let unique = uuid::Uuid::new_v4();
     let resp = client
         .post(format!("{base_url}/api/auth/register"))
         .json(&serde_json::json!({
-            "email": format!("refreshtest{n}@example.com"),
+            "email": format!("refreshtest{n}-{unique}@example.com"),
             "display_name": "Refresh Tester",
             "password": "password123"
         }))
