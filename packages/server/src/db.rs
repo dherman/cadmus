@@ -68,6 +68,21 @@ impl Database {
         Ok(result.rows_affected() > 0)
     }
 
+    pub async fn update_document_title(
+        &self,
+        id: Uuid,
+        title: &str,
+    ) -> Result<Option<DocumentRow>, sqlx::Error> {
+        sqlx::query_as::<_, DocumentRow>(
+            r#"UPDATE documents SET title = $2, updated_at = NOW() WHERE id = $1
+               RETURNING id, title, schema_version, snapshot_key, created_at, updated_at"#,
+        )
+        .bind(id)
+        .bind(title)
+        .fetch_optional(&self.pool)
+        .await
+    }
+
     pub async fn update_document_snapshot(
         &self,
         id: Uuid,

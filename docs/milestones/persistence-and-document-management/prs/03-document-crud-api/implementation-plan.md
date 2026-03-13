@@ -2,14 +2,14 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Database Schema & Migrations) merged
-- [ ] PostgreSQL running with migrations applied
+- [x] PR 1 (Database Schema & Migrations) merged
+- [x] PostgreSQL running with migrations applied
 
 ## Steps
 
 ### Step 1: Update the DocumentSummary response type
 
-- [ ] In `packages/server/src/documents/api.rs`, update `DocumentSummary` to use proper types:
+- [x] In `packages/server/src/documents/api.rs`, update `DocumentSummary` to use proper types:
 
 ```rust
 use chrono::{DateTime, Utc};
@@ -36,7 +36,7 @@ impl From<DocumentRow> for DocumentSummary {
 
 ### Step 2: Implement the list endpoint
 
-- [ ] Replace the `list_documents` stub:
+- [x] Replace the `list_documents` stub:
 
 ```rust
 pub async fn list_documents(
@@ -51,7 +51,7 @@ pub async fn list_documents(
 
 ### Step 3: Implement the create endpoint
 
-- [ ] Replace the `create_document` stub:
+- [x] Replace the `create_document` stub:
 
 ```rust
 pub async fn create_document(
@@ -70,12 +70,12 @@ pub async fn create_document(
 }
 ```
 
-- [ ] Import `StatusCode` from axum
-- [ ] Update the return type in the route to accept the tuple
+- [x] Import `StatusCode` from axum
+- [x] Update the return type in the route to accept the tuple
 
 ### Step 4: Implement the get endpoint
 
-- [ ] Replace the `get_document` stub:
+- [x] Replace the `get_document` stub:
 
 ```rust
 pub async fn get_document(
@@ -92,7 +92,7 @@ pub async fn get_document(
 
 ### Step 5: Implement the delete endpoint
 
-- [ ] Add a `delete_document` handler:
+- [x] Add a `delete_document` handler:
 
 ```rust
 pub async fn delete_document(
@@ -123,7 +123,7 @@ pub async fn delete_document(
 
 ### Step 6: Implement the rename endpoint
 
-- [ ] Add `update_document_title` to `db.rs`:
+- [x] Add `update_document_title` to `db.rs`:
 
 ```rust
 pub async fn update_document_title(&self, id: Uuid, title: &str) -> Result<Option<DocumentRow>, sqlx::Error> {
@@ -138,7 +138,7 @@ pub async fn update_document_title(&self, id: Uuid, title: &str) -> Result<Optio
 }
 ```
 
-- [ ] Add the handler:
+- [x] Add the handler:
 
 ```rust
 #[derive(Deserialize)]
@@ -165,7 +165,7 @@ pub async fn update_document(
 
 ### Step 7: Register routes
 
-- [ ] In `packages/server/src/lib.rs`, add the new routes:
+- [x] In `packages/server/src/lib.rs`, add the new routes:
 
 ```rust
 use axum::routing::{delete, patch};
@@ -176,7 +176,7 @@ use axum::routing::{delete, patch};
 
 ### Step 8: Guard WebSocket connections
 
-- [ ] In `websocket/handler.rs`, verify the document exists before upgrading:
+- [x] In `websocket/handler.rs`, verify the document exists before upgrading:
 
 ```rust
 pub async fn ws_upgrade(
@@ -196,7 +196,7 @@ pub async fn ws_upgrade(
 
 ### Step 9: Tests
 
-- [ ] Write API tests in `packages/server/tests/api.rs`:
+- [x] Write API tests in `packages/server/tests/api.rs`:
 
 ```rust
 #[tokio::test]
@@ -230,15 +230,15 @@ async fn test_websocket_rejects_nonexistent_document() {
 
 ## Verification
 
-- [ ] `curl -X POST localhost:8080/api/docs -H 'Content-Type: application/json' -d '{"title":"Test"}'` → 201 with document JSON
-- [ ] `curl localhost:8080/api/docs` → list includes the created document
-- [ ] `curl localhost:8080/api/docs/{id}` → 200 with document details
-- [ ] `curl -X PATCH localhost:8080/api/docs/{id} -H 'Content-Type: application/json' -d '{"title":"Renamed"}'` → 200 with updated title
-- [ ] `curl -X DELETE localhost:8080/api/docs/{id}` → 204
-- [ ] `curl localhost:8080/api/docs/{id}` → 404 after deletion
-- [ ] WebSocket connection to a nonexistent document ID fails
-- [ ] WebSocket connection to a valid document ID succeeds
-- [ ] `cargo test` passes all new tests
+- [x] `curl -X POST localhost:8080/api/docs -H 'Content-Type: application/json' -d '{"title":"Test"}'` → 201 with document JSON
+- [x] `curl localhost:8080/api/docs` → list includes the created document
+- [x] `curl localhost:8080/api/docs/{id}` → 200 with document details
+- [x] `curl -X PATCH localhost:8080/api/docs/{id} -H 'Content-Type: application/json' -d '{"title":"Renamed"}'` → 200 with updated title
+- [x] `curl -X DELETE localhost:8080/api/docs/{id}` → 204
+- [x] `curl localhost:8080/api/docs/{id}` → 404 after deletion
+- [x] WebSocket connection to a nonexistent document ID fails
+- [x] WebSocket connection to a valid document ID succeeds
+- [x] `cargo test` passes all new tests
 
 ## Files Created/Modified
 

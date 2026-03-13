@@ -1,19 +1,32 @@
 use axum::{
     extract::{Path, Query, State},
+    http::StatusCode,
     Json,
 };
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::{errors::AppError, AppState};
+use crate::{db::DocumentRow, errors::AppError, AppState};
 
 #[derive(Serialize)]
 pub struct DocumentSummary {
     pub id: Uuid,
     pub title: String,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl From<DocumentRow> for DocumentSummary {
+    fn from(row: DocumentRow) -> Self {
+        Self {
+            id: row.id,
+            title: row.title,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -35,29 +48,108 @@ pub struct PushContentRequest {
     pub content: String,
 }
 
-// --- Handler stubs ---
+#[derive(Deserialize)]
+pub struct UpdateDocumentRequest {
+    pub title: Option<String>,
+}
+
+// --- Handlers ---
 
 pub async fn list_documents(
-    State(_state): State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<DocumentSummary>>, AppError> {
-    // TODO: Query database for documents accessible to the authenticated user
-    Ok(Json(vec![]))
+    let rows = state
+        .db
+        .list_documents()
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let docs: Vec<DocumentSummary> = rows.into_iter().map(Into::into).collect();
+    Ok(Json(docs))
 }
 
 pub async fn create_document(
-    State(_state): State<Arc<AppState>>,
-    Json(_body): Json<CreateDocumentRequest>,
-) -> Result<Json<DocumentSummary>, AppError> {
-    // TODO: Create document in database, optionally parse initial markdown content
-    Err(AppError::Internal("Not yet implemented".to_string()))
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<CreateDocumentRequest>,
+) -> Result<(StatusCode, Json<DocumentSummary>), AppError> {
+    if body.title.trim().is_empty() {
+        return Err(AppError::BadRequest("Title is required".to_string()));
+    }
+
+    let id = Uuid::new_v4();
+    let row = state
+        .db
+        .create_document(id, body.title.trim())
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok((StatusCode::CREATED, Json(row.into())))
 }
 
 pub async fn get_document(
-    State(_state): State<Arc<AppState>>,
-    Path(_id): Path<Uuid>,
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
 ) -> Result<Json<DocumentSummary>, AppError> {
-    // TODO: Fetch document metadata
-    Err(AppError::NotFound("Document not found".to_string()))
+    let row = state
+        .db
+        .get_document(id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Document not found".to_string()))?;
+
+    Ok(Json(row.into()))
+}
+
+pub async fn delete_document(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<StatusCode, AppError> {
+    let doc = state
+        .db
+        .get_document(id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Document not found".to_string()))?;
+
+    // Unload from memory if active
+    state.document_sessions.unload(id);
+
+    // Delete S3 snapshot if exists
+    if doc.snapshot_key.is_some() {
+        state
+            .storage
+            .delete_snapshot(id)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+    }
+
+    // Delete from database (cascades to update_log and permissions)
+    state
+        .db
+        .delete_document(id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn update_document(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    Json(body): Json<UpdateDocumentRequest>,
+) -> Result<Json<DocumentSummary>, AppError> {
+    let title = body
+        .title
+        .filter(|t| !t.trim().is_empty())
+        .ok_or_else(|| AppError::BadRequest("Title is required".to_string()))?;
+
+    let row = state
+        .db
+        .update_document_title(id, title.trim())
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Document not found".to_string()))?;
+
+    Ok(Json(row.into()))
 }
 
 pub async fn get_content(
