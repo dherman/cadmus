@@ -342,3 +342,119 @@ body {
   text-overflow: ellipsis;
   max-width: 120px;
 }
+
+/* Dashboard layout */
+.dashboard {
+  min-height: 100vh;
+  background: #fff;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.dashboard-content {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.dashboard-loading {
+  text-align: center;
+  color: #6b7280;
+  padding: 4rem 0;
+}
+
+/* Document list */
+.document-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.document-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.document-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.1);
+}
+
+.document-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.document-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+/* Empty state */
+.dashboard-empty {
+  text-align: center;
+  color: #6b7280;
+  padding: 4rem 0;
+}
+
+.dashboard-empty p {
+  margin: 0.25em 0;
+}
+
+/* Back button */
+.back-button {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.back-button:hover {
+  background: #e5e7eb;
+}
+
+/* Primary button */
+.btn-primary {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
