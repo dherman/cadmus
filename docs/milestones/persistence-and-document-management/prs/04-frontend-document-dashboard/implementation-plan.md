@@ -233,16 +233,16 @@ export function EditorPage() {
 
 ## Verification
 
-- [ ] `pnpm -F @cadmus/web dev` starts without errors
-- [ ] Navigate to `http://localhost:5173/` — see the empty dashboard
-- [ ] Click "New Document" — creates a document and navigates to `/docs/{id}`
-- [ ] The editor loads and is functional (type text, formatting works)
-- [ ] Click "← Documents" — returns to the dashboard
-- [ ] The created document appears in the document list
-- [ ] Click the document card — navigates back to the editor with the same content
-- [ ] Open a second browser tab to the same `/docs/{id}` — collaborative editing works
-- [ ] Direct navigation to `/docs/{id}` works (paste URL in new tab)
-- [ ] Browser back/forward navigation works correctly
+- [x] `pnpm -F @cadmus/web dev` starts without errors
+- [x] Navigate to `http://localhost:5173/` — see the empty dashboard
+- [x] Click "New Document" — creates a document and navigates to `/docs/{id}`
+- [x] The editor loads and is functional (type text, formatting works)
+- [x] Click "← Documents" — returns to the dashboard
+- [x] The created document appears in the document list
+- [x] Click the document card — navigates back to the editor with the same content
+- [x] Open a second browser tab to the same `/docs/{id}` — collaborative editing works
+- [x] Direct navigation to `/docs/{id}` works (paste URL in new tab)
+- [x] Browser back/forward navigation works correctly
 - [x] `pnpm -F @cadmus/web build` succeeds
 
 ## Files Created/Modified
