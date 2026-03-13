@@ -22,7 +22,16 @@ impl SnapshotStorage {
             config_loader = config_loader.endpoint_url(endpoint);
         }
         let config = config_loader.load().await;
-        let client = S3Client::new(&config);
+
+        // When using a custom endpoint (e.g. LocalStack), enable path-style
+        // addressing so requests go to `endpoint/bucket` instead of
+        // `bucket.endpoint` (which won't resolve for local services).
+        let mut s3_config = aws_sdk_s3::config::Builder::from(&config);
+        if endpoint.is_some() {
+            s3_config = s3_config.force_path_style(true);
+        }
+        let client = S3Client::from_conf(s3_config.build());
+
         Self {
             client,
             bucket: bucket.to_string(),

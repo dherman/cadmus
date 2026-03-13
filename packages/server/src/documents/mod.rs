@@ -56,16 +56,20 @@ impl DocumentSession {
     }
 
     /// Start observing Yrs updates and appending them to the database update log.
+    ///
+    /// Must be called immediately after construction, before the session is
+    /// shared with other tasks, so the `try_read()` is guaranteed to succeed.
     pub fn start_update_logging(&self, db: Database) {
         let doc_id = self.doc_id;
         let flush_notify = &self.flush_notify as *const Notify;
         let update_count = &self.update_count as *const AtomicU64;
 
-        // Safety: The observer is tied to the Doc's lifetime which is held by the
-        // awareness, which is held by the DocumentSession (self). The raw pointers
-        // to flush_notify and update_count are valid as long as the session lives,
-        // and the observer is dropped when the awareness is dropped.
-        let awareness = self.awareness.blocking_read();
+        // try_read() is safe here because start_update_logging is called right
+        // after session construction, before the session is shared — no other
+        // task can hold the lock yet.
+        let awareness = self.awareness.try_read().expect(
+            "start_update_logging must be called before the session is shared",
+        );
         let sub = awareness
             .doc()
             .observe_update_v1(move |_txn, event| {

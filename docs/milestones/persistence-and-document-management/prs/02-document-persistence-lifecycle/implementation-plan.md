@@ -303,7 +303,7 @@ async fn test_unload_after_grace_period() {
 
 ## Verification
 
-- [ ] Start server with Postgres and LocalStack running
+- [x] Start server with Postgres and LocalStack running
 - [ ] Open two browser tabs, edit a document collaboratively
 - [ ] Wait 5+ seconds with no edits — check S3 for a snapshot file
 - [ ] Restart the server (`Ctrl+C` and `cargo run` again)
