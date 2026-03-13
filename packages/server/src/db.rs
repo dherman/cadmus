@@ -185,4 +185,24 @@ impl Database {
             .await?;
         Ok(())
     }
+
+    // ── Permission queries ──
+
+    pub async fn create_permission(
+        &self,
+        document_id: Uuid,
+        user_id: Uuid,
+        role: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "INSERT INTO document_permissions (id, document_id, user_id, role) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(Uuid::new_v4())
+        .bind(document_id)
+        .bind(user_id)
+        .bind(role)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }

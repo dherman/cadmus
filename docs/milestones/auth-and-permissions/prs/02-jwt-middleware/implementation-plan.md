@@ -2,19 +2,19 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Users & Auth Endpoints) merged
-- [ ] Auth endpoints working (register, login, refresh)
+- [x] PR 1 (Users & Auth Endpoints) merged
+- [x] Auth endpoints working (register, login, refresh)
 
 ## Steps
 
 ### Step 1: Create the auth middleware module
 
-- [ ] Create `packages/server/src/auth/middleware.rs`
-- [ ] Add `pub mod middleware;` to `packages/server/src/auth/mod.rs`
+- [x] Create `packages/server/src/auth/middleware.rs`
+- [x] Add `pub mod middleware;` to `packages/server/src/auth/mod.rs`
 
 ### Step 2: Implement the AuthUser extractor
 
-- [ ] Define `AuthUser` struct:
+- [x] Define `AuthUser` struct:
 
 ```rust
 use axum::extract::FromRequestParts;
@@ -35,7 +35,7 @@ pub struct AuthUser {
 }
 ```
 
-- [ ] Implement `FromRequestParts<Arc<AppState>>` for `AuthUser`:
+- [x] Implement `FromRequestParts<Arc<AppState>>` for `AuthUser`:
 
 ```rust
 #[async_trait]
@@ -72,7 +72,7 @@ impl FromRequestParts<Arc<AppState>> for AuthUser {
 
 ### Step 3: Implement OptionalAuthUser extractor
 
-- [ ] Define and implement `OptionalAuthUser`:
+- [x] Define and implement `OptionalAuthUser`:
 
 ```rust
 pub struct OptionalAuthUser(pub Option<AuthUser>);
@@ -89,7 +89,7 @@ impl FromRequestParts<Arc<AppState>> for OptionalAuthUser {
 
 ### Step 4: Update document list endpoint
 
-- [ ] Modify `list_documents` in `packages/server/src/documents/api.rs`:
+- [x] Modify `list_documents` in `packages/server/src/documents/api.rs`:
 
 ```rust
 pub async fn list_documents(
@@ -106,7 +106,7 @@ pub async fn list_documents(
 
 ### Step 5: Update document create endpoint
 
-- [ ] Modify `create_document` to use `AuthUser` and set `created_by`:
+- [x] Modify `create_document` to use `AuthUser` and set `created_by`:
 
 ```rust
 pub async fn create_document(
@@ -132,7 +132,7 @@ pub async fn create_document(
 
 ### Step 6: Update remaining document endpoints
 
-- [ ] Add `auth: AuthUser` parameter to all remaining document handlers:
+- [x] Add `auth: AuthUser` parameter to all remaining document handlers:
   - `get_document`
   - `update_document`
   - `delete_document`
@@ -141,11 +141,11 @@ pub async fn create_document(
   - `list_comments`
   - `create_comment`
 
-- [ ] No permission logic yet — just require the token is present and valid
+- [x] No permission logic yet — just require the token is present and valid
 
 ### Step 7: Update auth handlers to use the extractor
 
-- [ ] Refactor `ws_token` and `me` handlers in `auth/handlers.rs` to use `AuthUser` extractor instead of manually parsing the Authorization header:
+- [x] Refactor `ws_token` and `me` handlers in `auth/handlers.rs` to use `AuthUser` extractor instead of manually parsing the Authorization header:
 
 ```rust
 pub async fn ws_token(
@@ -167,7 +167,7 @@ pub async fn me(auth: AuthUser) -> Json<UserProfile> {
 
 ### Step 8: Add permission helper to database
 
-- [ ] Add `create_permission` method to `Database` in `db.rs`:
+- [x] Add `create_permission` method to `Database` in `db.rs`:
 
 ```rust
 pub async fn create_permission(
@@ -191,25 +191,25 @@ pub async fn create_permission(
 
 ### Step 9: Update existing tests
 
-- [ ] Update `packages/server/tests/api.rs` — all document API tests now need to:
+- [x] Update `packages/server/tests/api.rs` — all document API tests now need to:
   1. Register a user first
   2. Include `Authorization: Bearer {token}` header on all requests
   - Add a test helper function to register and get tokens
 
-- [ ] Add test: unauthenticated request to `GET /api/docs` → 401
-- [ ] Add test: request with expired token → 401
-- [ ] Add test: request with refresh token (wrong type) → 401
+- [x] Add test: unauthenticated request to `GET /api/docs` → 401
+- [x] Add test: request with expired token → 401
+- [x] Add test: request with refresh token (wrong type) → 401
 
 ## Verification
 
-- [ ] `cargo build` succeeds
-- [ ] All document endpoints return 401 without a valid token
-- [ ] All document endpoints work with a valid access token
-- [ ] `POST /api/docs` creates a document with `created_by` set to the authenticated user
-- [ ] `POST /api/docs` creates an `edit` permission entry for the creator
-- [ ] Auth endpoints (register, login, refresh) still work without tokens
-- [ ] Health endpoint works without tokens
-- [ ] `cargo test` passes all tests (existing tests updated)
+- [x] `cargo build` succeeds
+- [x] All document endpoints return 401 without a valid token
+- [x] All document endpoints work with a valid access token
+- [x] `POST /api/docs` creates a document with `created_by` set to the authenticated user
+- [x] `POST /api/docs` creates an `edit` permission entry for the creator
+- [x] Auth endpoints (register, login, refresh) still work without tokens
+- [x] Health endpoint works without tokens
+- [x] `cargo test` passes all tests (existing tests updated)
 
 ## Files Created/Modified
 

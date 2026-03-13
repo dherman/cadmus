@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
+use crate::auth::middleware::AuthUser;
 use crate::{db::DocumentRow, errors::AppError, AppState};
 
 #[derive(Serialize)]
@@ -37,7 +38,7 @@ pub struct CreateDocumentRequest {
 
 #[derive(Deserialize)]
 pub struct ContentQuery {
-    pub format: Option<String>,    // "markdown" or "json"
+    pub format: Option<String>, // "markdown" or "json"
     pub version: Option<String>,
 }
 
@@ -56,6 +57,7 @@ pub struct UpdateDocumentRequest {
 // --- Handlers ---
 
 pub async fn list_documents(
+    _auth: AuthUser,
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<DocumentSummary>>, AppError> {
     let rows = state
@@ -68,6 +70,7 @@ pub async fn list_documents(
 }
 
 pub async fn create_document(
+    auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Json(body): Json<CreateDocumentRequest>,
 ) -> Result<(StatusCode, Json<DocumentSummary>), AppError> {
@@ -78,7 +81,14 @@ pub async fn create_document(
     let id = Uuid::new_v4();
     let row = state
         .db
-        .create_document(id, body.title.trim(), None)
+        .create_document(id, body.title.trim(), Some(auth.user_id))
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    // Auto-grant Edit permission to the creator
+    state
+        .db
+        .create_permission(id, auth.user_id, "edit")
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -86,6 +96,7 @@ pub async fn create_document(
 }
 
 pub async fn get_document(
+    _auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<DocumentSummary>, AppError> {
@@ -100,6 +111,7 @@ pub async fn get_document(
 }
 
 pub async fn delete_document(
+    _auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode, AppError> {
@@ -133,6 +145,7 @@ pub async fn delete_document(
 }
 
 pub async fn update_document(
+    _auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateDocumentRequest>,
@@ -153,6 +166,7 @@ pub async fn update_document(
 }
 
 pub async fn get_content(
+    _auth: AuthUser,
     State(_state): State<Arc<AppState>>,
     Path(_id): Path<Uuid>,
     Query(_query): Query<ContentQuery>,
@@ -162,6 +176,7 @@ pub async fn get_content(
 }
 
 pub async fn push_content(
+    _auth: AuthUser,
     State(_state): State<Arc<AppState>>,
     Path(_id): Path<Uuid>,
     Json(_body): Json<PushContentRequest>,
@@ -172,6 +187,7 @@ pub async fn push_content(
 }
 
 pub async fn list_comments(
+    _auth: AuthUser,
     State(_state): State<Arc<AppState>>,
     Path(_id): Path<Uuid>,
 ) -> Result<Json<Vec<serde_json::Value>>, AppError> {
@@ -180,6 +196,7 @@ pub async fn list_comments(
 }
 
 pub async fn create_comment(
+    _auth: AuthUser,
     State(_state): State<Arc<AppState>>,
     Path(_id): Path<Uuid>,
     Json(_body): Json<serde_json::Value>,
