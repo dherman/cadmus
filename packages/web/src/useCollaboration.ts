@@ -5,12 +5,12 @@ import type { WebsocketProvider } from 'y-websocket';
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected';
 
-export function useCollaboration(docId: string) {
+export function useCollaboration(docId: string, wsToken: string = '') {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
   const [collab, setCollab] = useState<{ ydoc: Y.Doc; provider: WebsocketProvider } | null>(null);
 
   useEffect(() => {
-    const { ydoc, provider } = createCollaborationProvider(docId);
+    const { ydoc, provider } = createCollaborationProvider(docId, wsToken);
 
     const handleStatus = ({ status }: { status: ConnectionStatus }) => {
       setConnectionStatus(status);
