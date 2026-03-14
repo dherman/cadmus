@@ -10,8 +10,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "dev": "concurrently \"pnpm dev:server\" \"pnpm dev:web\"",
+    "dev": "concurrently -n infra,server,sidecar,web -c blue,green,yellow,magenta \"pnpm dev:infra\" \"pnpm dev:server\" \"pnpm dev:sidecar\" \"pnpm dev:web\"",
+    "dev:infra": "docker compose up db localstack",
     "dev:server": "cd packages/server && cargo run",
+    "dev:sidecar": "pnpm -F @cadmus/sidecar dev",
     "dev:web": "pnpm -F @cadmus/web dev",
     "build:web": "pnpm -F @cadmus/web build"
   },
