@@ -1,52 +1,82 @@
 //! Integration tests for the Cadmus WebSocket server.
 //!
-//! These tests start a real server on a random port and connect to it.
-//! The WebSocket tests pre-load sessions directly to avoid needing a real database.
+//! These tests require:
+//! - PostgreSQL with migrations applied (DATABASE_URL)
+//! - LocalStack S3 running (S3_ENDPOINT=http://localhost:4566)
+//!
+//! Run with: cargo test --test websocket_test
+//! Skip with: set SKIP_PERSISTENCE_TESTS=1
 
+use cadmus_server::db::Database;
 use cadmus_server::{build_router, AppState};
 use futures_util::{SinkExt, StreamExt};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::time::{timeout, Duration};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
-use uuid::Uuid;
-use yrs::doc::Transact;
 use yrs::sync::{Message as YrsMessage, SyncMessage};
 use yrs::StateVector;
-use yrs::types::text::Text;
 use yrs::updates::encoder::Encode;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
-fn test_config() -> cadmus_server::config::Config {
-    cadmus_server::config::Config {
-        database_url: String::new(),
-        sidecar_url: "http://localhost:3001".to_string(),
-        jwt_secret: "test-secret".to_string(),
-        s3_bucket: "test-bucket".to_string(),
-        s3_endpoint: None,
-        port: 0,
-    }
+fn should_skip() -> bool {
+    std::env::var("SKIP_PERSISTENCE_TESTS").is_ok()
 }
 
-async fn spawn_test_server() -> (String, Arc<AppState>) {
+fn database_url() -> String {
+    std::env::var("DATABASE_URL").unwrap_or_else(|_| "postgres://localhost/cadmus_test".to_string())
+}
+
+fn s3_endpoint() -> String {
+    std::env::var("S3_ENDPOINT").unwrap_or_else(|_| "http://localhost:4566".to_string())
+}
+
+const S3_BUCKET: &str = "cadmus-documents";
+
+static TEST_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(2000);
+
+async fn spawn_test_server() -> Option<(String, Arc<AppState>)> {
+    if should_skip() {
+        return None;
+    }
+
+    let db = match Database::connect(&database_url()).await {
+        Ok(db) => db,
+        Err(e) => {
+            eprintln!("Skipping WebSocket test — cannot connect to database: {e}");
+            return None;
+        }
+    };
+
+    if let Err(e) = sqlx::migrate!().run(&db.pool).await {
+        eprintln!("Skipping WebSocket test — migration failed: {e}");
+        return None;
+    }
+
     let storage = cadmus_server::documents::storage::SnapshotStorage::new(
-        "test-bucket",
-        Some("http://localhost:4566"),
+        S3_BUCKET,
+        Some(&s3_endpoint()),
     )
     .await;
 
     let state = Arc::new(AppState {
-        db: cadmus_server::db::Database::connect_lazy("postgres://localhost/cadmus_test").unwrap(),
+        db,
         document_sessions: Arc::new(cadmus_server::documents::SessionManager::new()),
         storage,
         sidecar: cadmus_server::sidecar::SidecarClient::new("http://localhost:3001"),
-        config: test_config(),
+        config: cadmus_server::config::Config {
+            database_url: database_url(),
+            sidecar_url: "http://localhost:3001".to_string(),
+            jwt_secret: "test-secret".to_string(),
+            s3_bucket: S3_BUCKET.to_string(),
+            s3_endpoint: Some(s3_endpoint()),
+            port: 0,
+        },
     });
 
     let app = build_router(state.clone());
 
-    // Bind on port 0 to get a random free port
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
 
@@ -54,23 +84,55 @@ async fn spawn_test_server() -> (String, Arc<AppState>) {
         axum::serve(listener, app).await.unwrap();
     });
 
-    (format!("http://127.0.0.1:{}", addr.port()), state)
+    Some((format!("http://127.0.0.1:{}", addr.port()), state))
 }
 
-/// Pre-load a document session directly into the session manager
-/// (bypasses database lookup, for tests that don't need persistence).
-async fn preload_session(
-    state: &AppState,
-    doc_id: Uuid,
-) -> Arc<cadmus_server::documents::DocumentSession> {
-    use cadmus_server::documents::DocumentSession;
-    let session = DocumentSession::new(doc_id).await;
-    // Access sessions via get_or_load would require DB; insert directly instead.
-    // We use a helper that inserts into the DashMap through the public API.
-    // Since get_or_load now requires db/storage, we preload by creating the session
-    // and relying on the fact that get_or_load checks the cache first.
-    state.document_sessions.preload(doc_id, session.clone());
-    session
+/// Register a test user and return (access_token, user_id).
+async fn register_user(client: &reqwest::Client, base_url: &str) -> (String, String) {
+    let n = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let unique = uuid::Uuid::new_v4();
+    let resp = client
+        .post(format!("{base_url}/api/auth/register"))
+        .json(&serde_json::json!({
+            "email": format!("wstest{n}-{unique}@example.com"),
+            "display_name": format!("WS Test User {n}"),
+            "password": "password123"
+        }))
+        .send()
+        .await
+        .expect("register request failed");
+    assert_eq!(resp.status(), 201);
+    let body: serde_json::Value = resp.json().await.unwrap();
+    let token = body["access_token"].as_str().unwrap().to_string();
+    let user_id = body["user"]["id"].as_str().unwrap().to_string();
+    (token, user_id)
+}
+
+/// Create a document and return its id.
+async fn create_doc(client: &reqwest::Client, base_url: &str, token: &str) -> String {
+    let resp = client
+        .post(format!("{base_url}/api/docs"))
+        .bearer_auth(token)
+        .json(&serde_json::json!({ "title": "WS Test Doc" }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+    let doc: serde_json::Value = resp.json().await.unwrap();
+    doc["id"].as_str().unwrap().to_string()
+}
+
+/// Get a ws-token for the given access token.
+async fn get_ws_token(client: &reqwest::Client, base_url: &str, access_token: &str) -> String {
+    let resp = client
+        .post(format!("{base_url}/api/auth/ws-token"))
+        .bearer_auth(access_token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+    let body: serde_json::Value = resp.json().await.unwrap();
+    body["ws_token"].as_str().unwrap().to_string()
 }
 
 /// Encode a y-sync SyncStep1 message with an empty state vector.
@@ -80,7 +142,9 @@ fn sync_step1_msg() -> Vec<u8> {
 
 #[tokio::test]
 async fn health_endpoint_returns_200() {
-    let (base_url, _state) = spawn_test_server().await;
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
 
     let resp = reqwest::get(format!("{}/health", base_url))
         .await
@@ -93,16 +157,20 @@ async fn health_endpoint_returns_200() {
 
 #[tokio::test]
 async fn websocket_connects_to_document() {
-    let (base_url, state) = spawn_test_server().await;
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
 
-    // Pre-load a document session
-    let doc_id = Uuid::new_v4();
-    preload_session(&state, doc_id).await;
+    let client = reqwest::Client::new();
+    let (access_token, _) = register_user(&client, &base_url).await;
+    let doc_id = create_doc(&client, &base_url, &access_token).await;
+    let ws_token = get_ws_token(&client, &base_url, &access_token).await;
 
     let ws_url = format!(
-        "{}/api/docs/{}/ws",
+        "{}/api/docs/{}/ws?token={}",
         base_url.replace("http://", "ws://"),
-        doc_id
+        doc_id,
+        ws_token
     );
 
     let (mut ws, _) = timeout(TIMEOUT, connect_async(&ws_url))
@@ -131,16 +199,15 @@ async fn websocket_connects_to_document() {
 
 #[tokio::test]
 async fn websocket_returns_404_for_unknown_document() {
-    let (base_url, _state) = spawn_test_server().await;
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
 
-    // Use an unknown doc ID — ws_upgrade calls get_or_load which will auto-create,
-    // so we test that the connection succeeds (auto-create semantics for this milestone)
-    // and then we verify the health endpoint rejects non-doc paths with 404 instead.
     let resp = reqwest::get(format!("{}/api/docs/does-not-exist/content", base_url))
         .await
         .expect("request failed");
 
-    // Should be 422 (Unprocessable Entity) since "does-not-exist" isn't a valid UUID
+    // Should be 4xx since "does-not-exist" isn't a valid UUID
     assert!(
         resp.status().as_u16() >= 400,
         "expected 4xx for invalid doc path"
@@ -149,25 +216,38 @@ async fn websocket_returns_404_for_unknown_document() {
 
 #[tokio::test]
 async fn two_clients_sync_edits() {
-    let (base_url, state) = spawn_test_server().await;
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
 
-    // Pre-load a shared document session
-    let doc_id = Uuid::new_v4();
-    let session = preload_session(&state, doc_id).await;
+    let client = reqwest::Client::new();
+    let (access_token, _) = register_user(&client, &base_url).await;
+    let doc_id = create_doc(&client, &base_url, &access_token).await;
 
-    let ws_url = format!(
-        "{}/api/docs/{}/ws",
+    // Get ws-tokens for both connections (ws-tokens are short-lived, get them just before connecting)
+    let ws_token1 = get_ws_token(&client, &base_url, &access_token).await;
+    let ws_token2 = get_ws_token(&client, &base_url, &access_token).await;
+
+    let ws_url1 = format!(
+        "{}/api/docs/{}/ws?token={}",
         base_url.replace("http://", "ws://"),
-        doc_id
+        doc_id,
+        ws_token1
+    );
+    let ws_url2 = format!(
+        "{}/api/docs/{}/ws?token={}",
+        base_url.replace("http://", "ws://"),
+        doc_id,
+        ws_token2
     );
 
     // Connect two clients
-    let (mut ws1, _) = timeout(TIMEOUT, connect_async(&ws_url))
+    let (mut ws1, _) = timeout(TIMEOUT, connect_async(&ws_url1))
         .await
         .expect("timeout")
         .expect("client 1 connect failed");
 
-    let (mut ws2, _) = timeout(TIMEOUT, connect_async(&ws_url))
+    let (mut ws2, _) = timeout(TIMEOUT, connect_async(&ws_url2))
         .await
         .expect("timeout")
         .expect("client 2 connect failed");
@@ -183,8 +263,20 @@ async fn two_clients_sync_edits() {
         let _ = timeout(Duration::from_millis(300), ws2.next()).await;
     }
 
-    // Apply an edit directly to the server-side document
+    // Apply an edit directly to the server-side document via the session manager
     {
+        use yrs::doc::Transact;
+        use yrs::types::text::Text;
+
+        let session = _state
+            .document_sessions
+            .get_or_load(
+                doc_id.parse().unwrap(),
+                &_state.db,
+                &_state.storage,
+            )
+            .await
+            .unwrap();
         let awareness = session.awareness.write().await;
         let doc = awareness.doc();
         let text = doc.get_or_insert_text("content");

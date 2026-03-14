@@ -50,6 +50,23 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         )
         // WebSocket endpoint for real-time collaboration
         .route("/api/docs/{id}/ws", get(websocket::handler::ws_upgrade))
+        // Sharing / permissions
+        .route(
+            "/api/docs/{id}/permissions",
+            get(documents::permissions::list_permissions),
+        )
+        .route(
+            "/api/docs/{id}/permissions",
+            post(documents::permissions::add_permission),
+        )
+        .route(
+            "/api/docs/{id}/permissions/{user_id}",
+            patch(documents::permissions::update_permission_handler),
+        )
+        .route(
+            "/api/docs/{id}/permissions/{user_id}",
+            delete(documents::permissions::delete_permission_handler),
+        )
         // Comments
         .route(
             "/api/docs/{id}/comments",

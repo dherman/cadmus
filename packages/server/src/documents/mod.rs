@@ -1,4 +1,5 @@
 pub mod api;
+pub mod permissions;
 pub mod storage;
 
 use dashmap::DashMap;
