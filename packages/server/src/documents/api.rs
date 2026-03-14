@@ -9,6 +9,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::auth::middleware::AuthUser;
+use crate::documents::permissions::{require_owner, require_permission, Permission};
 use crate::{db::DocumentRow, errors::AppError, AppState};
 
 #[derive(Serialize)]
@@ -57,12 +58,12 @@ pub struct UpdateDocumentRequest {
 // --- Handlers ---
 
 pub async fn list_documents(
-    _auth: AuthUser,
+    auth: AuthUser,
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<DocumentSummary>>, AppError> {
     let rows = state
         .db
-        .list_documents()
+        .list_accessible_documents(auth.user_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
     let docs: Vec<DocumentSummary> = rows.into_iter().map(Into::into).collect();
@@ -96,10 +97,12 @@ pub async fn create_document(
 }
 
 pub async fn get_document(
-    _auth: AuthUser,
+    auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<DocumentSummary>, AppError> {
+    require_permission(&state.db, auth.user_id, id, Permission::Read).await?;
+
     let row = state
         .db
         .get_document(id)
@@ -111,10 +114,12 @@ pub async fn get_document(
 }
 
 pub async fn delete_document(
-    _auth: AuthUser,
+    auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode, AppError> {
+    require_owner(&state.db, auth.user_id, id).await?;
+
     let doc = state
         .db
         .get_document(id)
@@ -145,11 +150,12 @@ pub async fn delete_document(
 }
 
 pub async fn update_document(
-    _auth: AuthUser,
+    auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateDocumentRequest>,
 ) -> Result<Json<DocumentSummary>, AppError> {
+    require_permission(&state.db, auth.user_id, id, Permission::Edit).await?;
     let title = body
         .title
         .filter(|t| !t.trim().is_empty())
@@ -166,41 +172,45 @@ pub async fn update_document(
 }
 
 pub async fn get_content(
-    _auth: AuthUser,
+    auth: AuthUser,
     State(_state): State<Arc<AppState>>,
-    Path(_id): Path<Uuid>,
+    Path(id): Path<Uuid>,
     Query(_query): Query<ContentQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    require_permission(&_state.db, auth.user_id, id, Permission::Read).await?;
     // TODO: Load document from session manager, serialize via sidecar if markdown requested
     Err(AppError::Internal("Not yet implemented".to_string()))
 }
 
 pub async fn push_content(
-    _auth: AuthUser,
+    auth: AuthUser,
     State(_state): State<Arc<AppState>>,
-    Path(_id): Path<Uuid>,
+    Path(id): Path<Uuid>,
     Json(_body): Json<PushContentRequest>,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    require_permission(&_state.db, auth.user_id, id, Permission::Edit).await?;
     // TODO: Parse pushed markdown via sidecar, diff against base version,
     // translate Steps to Yrs operations, apply to live document
     Err(AppError::Internal("Not yet implemented".to_string()))
 }
 
 pub async fn list_comments(
-    _auth: AuthUser,
-    State(_state): State<Arc<AppState>>,
-    Path(_id): Path<Uuid>,
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
 ) -> Result<Json<Vec<serde_json::Value>>, AppError> {
+    require_permission(&state.db, auth.user_id, id, Permission::Read).await?;
     // TODO: Query comments for this document
     Ok(Json(vec![]))
 }
 
 pub async fn create_comment(
-    _auth: AuthUser,
-    State(_state): State<Arc<AppState>>,
-    Path(_id): Path<Uuid>,
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
     Json(_body): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    require_permission(&state.db, auth.user_id, id, Permission::Comment).await?;
     // TODO: Create comment, convert offsets to RelativePositions, broadcast event
     Err(AppError::Internal("Not yet implemented".to_string()))
 }

@@ -2,14 +2,14 @@
 
 ## Prerequisites
 
-- [ ] PR 2 (JWT Middleware & Auth Extractors) merged
-- [ ] All document endpoints require `AuthUser` extractor
+- [x] PR 2 (JWT Middleware & Auth Extractors) merged
+- [x] All document endpoints require `AuthUser` extractor
 
 ## Steps
 
 ### Step 1: Define the Permission enum
 
-- [ ] Create `packages/server/src/documents/permissions.rs`:
+- [x] Create `packages/server/src/documents/permissions.rs`:
 
 ```rust
 use std::cmp::Ordering;
@@ -58,11 +58,11 @@ impl Ord for Permission {
 }
 ```
 
-- [ ] Add `pub mod permissions;` to `packages/server/src/documents/mod.rs`
+- [x] Add `pub mod permissions;` to `packages/server/src/documents/mod.rs`
 
 ### Step 2: Add permission database methods
 
-- [ ] Add to `packages/server/src/db.rs`:
+- [x] Add to `packages/server/src/db.rs`:
 
 ```rust
 pub async fn get_user_permission(
@@ -145,7 +145,7 @@ pub async fn list_accessible_documents(
 }
 ```
 
-- [ ] Add `PermissionWithUser` struct:
+- [x] Add `PermissionWithUser` struct:
 
 ```rust
 #[derive(Debug, sqlx::FromRow)]
@@ -159,7 +159,7 @@ pub struct PermissionWithUser {
 
 ### Step 3: Add the require_permission helper
 
-- [ ] In `packages/server/src/documents/permissions.rs`, add:
+- [x] In `packages/server/src/documents/permissions.rs`, add:
 
 ```rust
 use crate::db::Database;
@@ -205,7 +205,7 @@ pub async fn require_owner(
 
 ### Step 4: Add permission checks to document REST handlers
 
-- [ ] Update each handler in `packages/server/src/documents/api.rs`:
+- [x] Update each handler in `packages/server/src/documents/api.rs`:
 
 **list_documents** — replace `db.list_documents()` with `db.list_accessible_documents(auth.user_id)`:
 
@@ -264,7 +264,7 @@ require_permission(&state.db, auth.user_id, id, Permission::Comment).await?;
 
 ### Step 5: Add sharing endpoint handlers
 
-- [ ] Add sharing handlers to `packages/server/src/documents/permissions.rs` (or a new file `sharing.rs`):
+- [x] Add sharing handlers to `packages/server/src/documents/permissions.rs` (or a new file `sharing.rs`):
 
 **list_permissions:**
 
@@ -330,7 +330,7 @@ pub async fn add_permission(
 
 ### Step 6: Register sharing routes
 
-- [ ] In `packages/server/src/lib.rs`, add:
+- [x] In `packages/server/src/lib.rs`, add:
 
 ```rust
 .route("/api/docs/{id}/permissions", get(documents::permissions::list_permissions))
@@ -341,7 +341,7 @@ pub async fn add_permission(
 
 ### Step 7: Add WebSocket token validation
 
-- [ ] Update `packages/server/src/websocket/handler.rs`:
+- [x] Update `packages/server/src/websocket/handler.rs`:
 
 ```rust
 #[derive(Deserialize)]
@@ -385,7 +385,7 @@ pub async fn ws_upgrade(
 
 ### Step 8: Implement PermissionedProtocol
 
-- [ ] Create `packages/server/src/websocket/protocol.rs`:
+- [x] Create `packages/server/src/websocket/protocol.rs`:
 
 ```rust
 use yrs::sync::{DefaultProtocol, Error, Message, MessageReader, Protocol, SyncMessage};
@@ -402,9 +402,9 @@ impl Protocol for PermissionedProtocol {
 }
 ```
 
-- [ ] Add `pub mod protocol;` to `packages/server/src/websocket/mod.rs`
+- [x] Add `pub mod protocol;` to `packages/server/src/websocket/mod.rs`
 
-- [ ] Update `handle_ws` to use `PermissionedProtocol` when subscribing to the BroadcastGroup:
+- [x] Update `handle_ws` to use `PermissionedProtocol` when subscribing to the BroadcastGroup:
 
 ```rust
 async fn handle_ws(
@@ -422,7 +422,7 @@ async fn handle_ws(
 
 ### Step 9: Update frontend collaboration.ts
 
-- [ ] Update `packages/web/src/collaboration.ts` to pass token as query parameter:
+- [x] Update `packages/web/src/collaboration.ts` to pass token as query parameter:
 
 ```typescript
 export function createCollaborationProvider(docId: string, wsToken: string) {
@@ -437,11 +437,11 @@ export function createCollaborationProvider(docId: string, wsToken: string) {
 }
 ```
 
-- [ ] This requires the frontend auth context (PR 4) to obtain ws-tokens. For now, update the function signature; the actual token passing is wired in PR 4/5.
+- [x] This requires the frontend auth context (PR 4) to obtain ws-tokens. For now, update the function signature; the actual token passing is wired in PR 4/5.
 
 ### Step 10: Tests
 
-- [ ] Write permission enforcement tests in `packages/server/tests/permissions.rs`:
+- [x] Write permission enforcement tests in `packages/server/tests/permissions.rs`:
   - User with no permission on a document → 403 on GET
   - User with Read permission → can GET, cannot PATCH/DELETE/POST content
   - User with Comment permission → can GET, can POST comments, cannot POST content
@@ -456,15 +456,15 @@ export function createCollaborationProvider(docId: string, wsToken: string) {
 
 ## Verification
 
-- [ ] `cargo build` succeeds
-- [ ] User with no permission gets 403 on all document endpoints
-- [ ] User with Read permission can view but not edit
-- [ ] User with Edit permission can edit but only owner can delete
-- [ ] WebSocket connections require a valid ws-token
-- [ ] Read-only WebSocket clients cannot push edits (updates rejected server-side)
-- [ ] Document listing is scoped to the authenticated user's accessible documents
-- [ ] Sharing endpoints work (invite by email, change role, remove access)
-- [ ] `cargo test` passes all tests
+- [x] `cargo build` succeeds
+- [x] User with no permission gets 403 on all document endpoints
+- [x] User with Read permission can view but not edit
+- [x] User with Edit permission can edit but only owner can delete
+- [x] WebSocket connections require a valid ws-token
+- [x] Read-only WebSocket clients cannot push edits (updates rejected server-side)
+- [x] Document listing is scoped to the authenticated user's accessible documents
+- [x] Sharing endpoints work (invite by email, change role, remove access)
+- [x] `cargo test` passes all tests
 
 ## Files Created/Modified
 

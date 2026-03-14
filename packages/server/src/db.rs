@@ -15,8 +15,18 @@ pub struct DocumentRow {
     pub title: String,
     pub schema_version: i32,
     pub snapshot_key: Option<String>,
+    pub created_by: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+/// A permission row joined with user info.
+#[derive(Debug, sqlx::FromRow)]
+pub struct PermissionWithUser {
+    pub user_id: Uuid,
+    pub email: String,
+    pub display_name: String,
+    pub role: String,
 }
 
 /// A row from the `users` table.
@@ -93,7 +103,7 @@ impl Database {
     ) -> Result<DocumentRow, sqlx::Error> {
         sqlx::query_as::<_, DocumentRow>(
             r#"INSERT INTO documents (id, title, created_by) VALUES ($1, $2, $3)
-               RETURNING id, title, schema_version, snapshot_key, created_at, updated_at"#,
+               RETURNING id, title, schema_version, snapshot_key, created_by, created_at, updated_at"#,
         )
         .bind(id)
         .bind(title)
@@ -104,7 +114,7 @@ impl Database {
 
     pub async fn get_document(&self, id: Uuid) -> Result<Option<DocumentRow>, sqlx::Error> {
         sqlx::query_as::<_, DocumentRow>(
-            "SELECT id, title, schema_version, snapshot_key, created_at, updated_at FROM documents WHERE id = $1",
+            "SELECT id, title, schema_version, snapshot_key, created_by, created_at, updated_at FROM documents WHERE id = $1",
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -113,7 +123,7 @@ impl Database {
 
     pub async fn list_documents(&self) -> Result<Vec<DocumentRow>, sqlx::Error> {
         sqlx::query_as::<_, DocumentRow>(
-            "SELECT id, title, schema_version, snapshot_key, created_at, updated_at FROM documents ORDER BY updated_at DESC",
+            "SELECT id, title, schema_version, snapshot_key, created_by, created_at, updated_at FROM documents ORDER BY updated_at DESC",
         )
         .fetch_all(&self.pool)
         .await
@@ -134,7 +144,7 @@ impl Database {
     ) -> Result<Option<DocumentRow>, sqlx::Error> {
         sqlx::query_as::<_, DocumentRow>(
             r#"UPDATE documents SET title = $2, updated_at = NOW() WHERE id = $1
-               RETURNING id, title, schema_version, snapshot_key, created_at, updated_at"#,
+               RETURNING id, title, schema_version, snapshot_key, created_by, created_at, updated_at"#,
         )
         .bind(id)
         .bind(title)
@@ -204,5 +214,84 @@ impl Database {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    pub async fn get_user_permission(
+        &self,
+        document_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Option<String>, sqlx::Error> {
+        let row: Option<(String,)> = sqlx::query_as(
+            "SELECT role FROM document_permissions WHERE document_id = $1 AND user_id = $2",
+        )
+        .bind(document_id)
+        .bind(user_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(row.map(|r| r.0))
+    }
+
+    pub async fn list_permissions_with_users(
+        &self,
+        document_id: Uuid,
+    ) -> Result<Vec<PermissionWithUser>, sqlx::Error> {
+        sqlx::query_as::<_, PermissionWithUser>(
+            r#"SELECT dp.user_id, u.email, u.display_name, dp.role
+               FROM document_permissions dp
+               INNER JOIN users u ON u.id = dp.user_id
+               WHERE dp.document_id = $1
+               ORDER BY dp.created_at ASC"#,
+        )
+        .bind(document_id)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    pub async fn update_permission(
+        &self,
+        document_id: Uuid,
+        user_id: Uuid,
+        role: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE document_permissions SET role = $3 WHERE document_id = $1 AND user_id = $2",
+        )
+        .bind(document_id)
+        .bind(user_id)
+        .bind(role)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    pub async fn delete_permission(
+        &self,
+        document_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "DELETE FROM document_permissions WHERE document_id = $1 AND user_id = $2",
+        )
+        .bind(document_id)
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    pub async fn list_accessible_documents(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<DocumentRow>, sqlx::Error> {
+        sqlx::query_as::<_, DocumentRow>(
+            r#"SELECT d.id, d.title, d.schema_version, d.snapshot_key, d.created_by, d.created_at, d.updated_at
+               FROM documents d
+               INNER JOIN document_permissions dp ON dp.document_id = d.id
+               WHERE dp.user_id = $1
+               ORDER BY d.updated_at DESC"#,
+        )
+        .bind(user_id)
+        .fetch_all(&self.pool)
+        .await
     }
 }
