@@ -9,7 +9,7 @@
 
 ### Step 1: Add auth API functions
 
-- [ ] Add auth functions to `packages/web/src/api.ts`:
+- [x] Add auth functions to `packages/web/src/api.ts`:
 
 ```typescript
 export interface UserProfile {
@@ -75,7 +75,7 @@ export async function fetchMe(accessToken: string): Promise<UserProfile> {
 
 ### Step 2: Create AuthContext
 
-- [ ] Create `packages/web/src/auth/AuthContext.tsx`:
+- [x] Create `packages/web/src/auth/AuthContext.tsx`:
 
 ```typescript
 const TOKEN_KEY = 'cadmus-access-token';
@@ -93,7 +93,7 @@ interface AuthContextValue {
 }
 ```
 
-- [ ] Implement `AuthProvider` component:
+- [x] Implement `AuthProvider` component:
   - On mount, check `localStorage` for stored tokens
   - If tokens exist, call `GET /api/auth/me` to validate
   - If expired, attempt refresh with stored refresh token
@@ -103,7 +103,7 @@ interface AuthContextValue {
 
 ### Step 3: Create LoginPage
 
-- [ ] Create `packages/web/src/auth/LoginPage.tsx`:
+- [x] Create `packages/web/src/auth/LoginPage.tsx`:
   - Form with email + password inputs
   - Submit calls `useAuth().login()`
   - On success, navigate to `/`
@@ -113,7 +113,7 @@ interface AuthContextValue {
 
 ### Step 4: Create RegisterPage
 
-- [ ] Create `packages/web/src/auth/RegisterPage.tsx`:
+- [x] Create `packages/web/src/auth/RegisterPage.tsx`:
   - Form with email + display name + password inputs
   - Client-side validation (email contains `@`, display name non-empty, password ≥ 8 chars)
   - Submit calls `useAuth().register()`
@@ -124,7 +124,7 @@ interface AuthContextValue {
 
 ### Step 5: Create ProtectedRoute
 
-- [ ] Create `packages/web/src/auth/ProtectedRoute.tsx`:
+- [x] Create `packages/web/src/auth/ProtectedRoute.tsx`:
 
 ```tsx
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -144,9 +144,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 ### Step 6: Update routing in main.tsx
 
-- [ ] Wrap the app in `AuthProvider`
-- [ ] Add `/login` and `/register` routes
-- [ ] Wrap dashboard and editor routes in `ProtectedRoute`
+- [x] Wrap the app in `AuthProvider`
+- [x] Add `/login` and `/register` routes
+- [x] Wrap dashboard and editor routes in `ProtectedRoute`
 
 ```tsx
 <BrowserRouter>
@@ -177,7 +177,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 ### Step 7: Update api.ts to use auth headers
 
-- [ ] Create an `authFetch` wrapper that adds the `Authorization` header:
+- [x] Create an `authFetch` wrapper that adds the `Authorization` header:
 
 ```typescript
 let getAccessTokenFn: (() => Promise<string>) | null = null;
@@ -199,12 +199,12 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
 }
 ```
 
-- [ ] Update `listDocuments`, `createDocument`, `getDocument` to use `authFetch`
-- [ ] `AuthContext` calls `setAccessTokenProvider` on init
+- [x] Update `listDocuments`, `createDocument`, `getDocument` to use `authFetch`
+- [x] `AuthContext` calls `setAccessTokenProvider` on init
 
 ### Step 8: Update user-identity.ts
 
-- [ ] Replace `getOrCreateUserIdentity()` with `getUserIdentity(user: UserProfile)`:
+- [x] Replace `getOrCreateUserIdentity()` with `getUserIdentity(user: UserProfile)`:
 
 ```typescript
 function hashCode(str: string): number {
@@ -226,11 +226,11 @@ export function getUserIdentity(user: UserProfile): UserIdentity {
 }
 ```
 
-- [ ] Keep `getOrCreateUserIdentity` temporarily as a fallback during transition, or remove and update all call sites
+- [x] Keep `getOrCreateUserIdentity` temporarily as a fallback during transition, or remove and update all call sites
 
 ### Step 9: Update EditorPage to use ws-token
 
-- [ ] In `EditorPage.tsx` (or `useCollaboration.ts`), get a ws-token before connecting:
+- [x] In `EditorPage.tsx` (or `useCollaboration.ts`), get a ws-token before connecting:
 
 ```typescript
 const { getWsToken, user } = useAuth();
@@ -245,7 +245,7 @@ useEffect(() => {
 }, [docId]);
 ```
 
-- [ ] Handle WebSocket close code `4401` for token renewal:
+- [x] Handle WebSocket close code `4401` for token renewal:
 
 ```typescript
 provider.ws?.addEventListener('close', async (event) => {
@@ -260,7 +260,7 @@ provider.ws?.addEventListener('close', async (event) => {
 
 ### Step 10: Update Dashboard with user header
 
-- [ ] Add a navigation bar showing the user's display name and a "Log out" button:
+- [x] Add a navigation bar showing the user's display name and a "Log out" button:
 
 ```tsx
 const { user, logout } = useAuth();
@@ -281,7 +281,7 @@ return (
 
 ### Step 11: Update awareness to use real user identity
 
-- [ ] In the collaboration setup, use `getUserIdentity(user)` instead of `getOrCreateUserIdentity()`:
+- [x] In the collaboration setup, use `getUserIdentity(user)` instead of `getOrCreateUserIdentity()`:
 
 ```typescript
 const identity = getUserIdentity(user);
@@ -304,8 +304,8 @@ provider.awareness.setLocalStateField('user', {
 - [ ] Logging out clears state and redirects to `/login`
 - [ ] Refreshing the page maintains the logged-in state
 - [ ] Long sessions survive token refresh (access token auto-renews)
-- [ ] `pnpm run format:check` passes
-- [ ] `pnpm run build` succeeds (web package)
+- [x] `pnpm run format:check` passes
+- [x] `pnpm run build` succeeds (web package)
 
 ## Files Created/Modified
 

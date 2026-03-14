@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { listDocuments, createDocument, DocumentSummary } from './api';
+import { useAuth } from './auth/AuthContext';
 
 export function Dashboard() {
   const [docs, setDocs] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     listDocuments()
@@ -22,9 +24,15 @@ export function Dashboard() {
     <div className="dashboard">
       <header className="dashboard-header">
         <h1>Cadmus</h1>
-        <button onClick={handleCreate} className="btn-primary">
-          New Document
-        </button>
+        <div className="dashboard-header-actions">
+          <button onClick={handleCreate} className="btn-primary">
+            New Document
+          </button>
+          <span className="dashboard-user">{user?.display_name}</span>
+          <button onClick={logout} className="btn-logout">
+            Log out
+          </button>
+        </div>
       </header>
       <main className="dashboard-content">
         {loading ? (
