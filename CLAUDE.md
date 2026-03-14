@@ -29,6 +29,18 @@ All env vars have sensible dev defaults. See `.env.example` for the full list. K
 - `VITE_API_URL` — Server URL for the web client (default: `http://localhost:8080`)
 - `VITE_WS_URL` — WebSocket URL for the web client (default: `ws://localhost:8080/api/docs`)
 
+### Checking Status
+
+```bash
+pnpm dev:status   # shows Docker container state + which dev ports are in use
+```
+
+### Stopping Services
+
+- **All at once** (`pnpm dev`): Ctrl+C in that terminal stops server, sidecar, and web. Then run `pnpm dev:stop` (or `docker compose down`) to stop Docker containers.
+- **Docker infra only**: `pnpm dev:stop` (or `docker compose down`)
+- **Individual services** started in separate terminals: Ctrl+C in each terminal.
+
 ### First-Time Setup
 
 ```bash

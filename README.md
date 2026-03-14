@@ -83,6 +83,24 @@ pnpm dev:sidecar  # Node sidecar for markdown conversion (port 3001)
 pnpm dev:web      # Vite dev server (port 5173)
 ```
 
+### Checking Status
+
+```bash
+pnpm dev:status
+```
+
+Shows Docker container state and which dev ports are in use.
+
+### Stopping Services
+
+```bash
+# If started with `pnpm dev`: Ctrl+C stops server/sidecar/web, then:
+pnpm dev:stop       # stops Docker containers (Postgres + LocalStack)
+
+# Or stop Docker directly:
+docker compose down
+```
+
 ### Ports
 
 | Service    | Port |
