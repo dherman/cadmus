@@ -24,7 +24,7 @@ export function useCollaboration(docId: string, wsToken: string = '') {
       setCollab(null);
       setConnectionStatus('connecting');
     };
-  }, [docId]);
+  }, [docId, wsToken]);
 
   return {
     ydoc: collab?.ydoc ?? null,

@@ -14,15 +14,3 @@ services:
     environment:
       - SERVICES=s3
       - DEFAULT_REGION=us-east-1
-
-  server:
-    build: ./packages/server
-    ports:
-      - '8080:8080'
-    environment:
-      - RUST_LOG=info
-      - DATABASE_URL=postgres://postgres:postgres@db/cadmus
-      - S3_ENDPOINT=http://localstack:4566
-    depends_on:
-      - db
-      - localstack

@@ -10,9 +10,13 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "dev": "concurrently \"pnpm dev:server\" \"pnpm dev:web\"",
+    "dev": "concurrently -n infra,server,sidecar,web -c blue,green,yellow,magenta \"pnpm dev:infra\" \"pnpm dev:server\" \"pnpm dev:sidecar\" \"pnpm dev:web\"",
+    "dev:infra": "docker compose up db localstack",
     "dev:server": "cd packages/server && cargo run",
+    "dev:sidecar": "pnpm -F @cadmus/sidecar dev",
     "dev:web": "pnpm -F @cadmus/web dev",
+    "dev:status": "echo '--- Docker ---' && docker compose ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}' 2>/dev/null || echo 'Docker not running' && echo '' && echo '--- Ports ---' && (lsof -iTCP:5433 -iTCP:4566 -iTCP:8080 -iTCP:3001 -iTCP:5173 -sTCP:LISTEN -P -n 2>/dev/null | awk 'NR>1 {print $1, $9}' || echo 'No services detected')",
+    "dev:stop": "docker compose down",
     "build:web": "pnpm -F @cadmus/web build"
   },
   "engines": {

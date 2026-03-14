@@ -48,28 +48,68 @@ cadmus/
 ### Prerequisites
 
 - Node.js >= 20
+- pnpm >= 9
 - Rust >= 1.75
-- PostgreSQL >= 15
-- Docker (for local development)
+- Docker (for Postgres and LocalStack)
 
 ### Getting Started
 
 ```bash
 # Install JS dependencies
-npm install
+pnpm install
 
 # Build the shared schema package
-npm run build -w packages/doc-schema
+pnpm -F @cadmus/doc-schema build
 
-# Start the Rust server (from packages/server/)
-cd packages/server && cargo run
-
-# Start the sidecar (from packages/sidecar/)
-cd packages/sidecar && npm run dev
-
-# Start the web client (from packages/web/)
-cd packages/web && npm run dev
+# Copy and (optionally) edit environment variables
+cp .env.example .env
 ```
+
+### Running Everything
+
+```bash
+# Start all services (Docker infra + Rust server + sidecar + web)
+pnpm dev
+```
+
+This runs all four services concurrently with color-coded output.
+
+### Running Services Individually
+
+```bash
+pnpm dev:infra    # Docker: Postgres (port 5433) + LocalStack/S3 (port 4566)
+pnpm dev:server   # Rust server (port 8080)
+pnpm dev:sidecar  # Node sidecar for markdown conversion (port 3001)
+pnpm dev:web      # Vite dev server (port 5173)
+```
+
+### Checking Status
+
+```bash
+pnpm dev:status
+```
+
+Shows Docker container state and which dev ports are in use.
+
+### Stopping Services
+
+```bash
+# If started with `pnpm dev`: Ctrl+C stops server/sidecar/web, then:
+pnpm dev:stop       # stops Docker containers (Postgres + LocalStack)
+
+# Or stop Docker directly:
+docker compose down
+```
+
+### Ports
+
+| Service    | Port |
+| ---------- | ---- |
+| Postgres   | 5433 |
+| LocalStack | 4566 |
+| Server     | 8080 |
+| Sidecar    | 3001 |
+| Web        | 5173 |
 
 ## License
 

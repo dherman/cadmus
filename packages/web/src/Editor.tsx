@@ -1,20 +1,26 @@
+import { useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { Collaboration } from '@tiptap/extension-collaboration';
 import { CollaborationCursor } from './collaboration-cursor-extension';
 import { createExtensions } from '@cadmus/doc-schema';
-import { getOrCreateUserIdentity } from './user-identity';
+import { getUserIdentity } from './user-identity';
 import { Toolbar } from './Toolbar';
 import type * as Y from 'yjs';
 import type { WebsocketProvider } from 'y-websocket';
-
-const identity = getOrCreateUserIdentity();
+import type { UserProfile } from './api';
 
 interface EditorProps {
   ydoc: Y.Doc;
   provider: WebsocketProvider;
+  user: UserProfile | null;
 }
 
-export function Editor({ ydoc, provider }: EditorProps) {
+export function Editor({ ydoc, provider, user }: EditorProps) {
+  const identity = useMemo(
+    () => (user ? getUserIdentity(user) : { name: 'Anonymous', color: '#888888' }),
+    [user],
+  );
+
   const editor = useEditor({
     extensions: [
       ...createExtensions({ disableHistory: true }),

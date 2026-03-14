@@ -1,5 +1,53 @@
 # Cadmus Project Instructions
 
+## Dev Environment
+
+### Quick Start (all services)
+
+```bash
+pnpm dev
+```
+
+This starts Docker infra, Rust server, sidecar, and web frontend concurrently.
+
+### Individual Services
+
+```bash
+pnpm dev:infra    # Docker: Postgres (port 5433) + LocalStack/S3 (port 4566)
+pnpm dev:server   # Rust server (port 8080)
+pnpm dev:sidecar  # Node sidecar for markdown conversion (port 3001)
+pnpm dev:web      # Vite dev server (port 5173)
+```
+
+### Environment Variables
+
+All env vars have sensible dev defaults. See `.env.example` for the full list. Key vars:
+
+- `DATABASE_URL` — Postgres connection string (default: `postgres://postgres:postgres@localhost:5433/cadmus`)
+- `S3_ENDPOINT` — LocalStack S3 endpoint (default: `http://localhost:4566`)
+- `JWT_SECRET` — JWT signing key (default: `dev-secret-change-in-production`)
+- `VITE_API_URL` — Server URL for the web client (default: `http://localhost:8080`)
+- `VITE_WS_URL` — WebSocket URL for the web client (default: `ws://localhost:8080/api/docs`)
+
+### Checking Status
+
+```bash
+pnpm dev:status   # shows Docker container state + which dev ports are in use
+```
+
+### Stopping Services
+
+- **All at once** (`pnpm dev`): Ctrl+C in that terminal stops server, sidecar, and web. Then run `pnpm dev:stop` (or `docker compose down`) to stop Docker containers.
+- **Docker infra only**: `pnpm dev:stop` (or `docker compose down`)
+- **Individual services** started in separate terminals: Ctrl+C in each terminal.
+
+### First-Time Setup
+
+```bash
+pnpm install
+pnpm -F @cadmus/doc-schema build
+```
+
 ## Formatting
 
 Before pushing to a PR branch, always run `pnpm run format:check` and fix any issues with `pnpm run format` (which runs Prettier). This applies to all file types Prettier covers, including markdown docs.
