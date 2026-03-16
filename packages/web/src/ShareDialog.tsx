@@ -13,12 +13,6 @@ interface ShareDialogProps {
   onClose: () => void;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  edit: 'Editor',
-  comment: 'Commenter',
-  read: 'Viewer',
-};
-
 export function ShareDialog({ docId, docTitle, onClose }: ShareDialogProps) {
   const [permissions, setPermissions] = useState<PermissionEntry[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
