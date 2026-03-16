@@ -108,6 +108,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessTokenProvider(getAccessToken);
   }, [getAccessToken]);
 
+  // Proactively refresh the access token before it expires
+  useEffect(() => {
+    if (!user) return;
+
+    function scheduleRefresh() {
+      const storedExpiry = localStorage.getItem(EXPIRY_KEY);
+      if (!storedExpiry) return undefined;
+
+      const expiry = Number(storedExpiry);
+      // Refresh 60s before expiry, but at least 1s from now
+      const delay = Math.max(expiry - Date.now() - 60_000, 1_000);
+
+      return window.setTimeout(async () => {
+        try {
+          await getAccessToken(); // triggers refresh if near expiry
+          // Schedule the next refresh for the new token
+          timerId = scheduleRefresh();
+        } catch {
+          // Refresh failed — user will be redirected on next API call
+        }
+      }, delay);
+    }
+
+    let timerId = scheduleRefresh();
+    return () => {
+      if (timerId != null) clearTimeout(timerId);
+    };
+  }, [user, getAccessToken]);
+
   const getWsToken = useCallback(async (): Promise<string> => {
     const token = await getAccessToken();
     const res = await fetchWsToken(token);

@@ -40,6 +40,7 @@ pnpm dev:status   # shows Docker container state + which dev ports are in use
 - **All at once** (`pnpm dev`): Ctrl+C in that terminal stops server, sidecar, and web. Then run `pnpm dev:stop` (or `docker compose down`) to stop Docker containers.
 - **Docker infra only**: `pnpm dev:stop` (or `docker compose down`)
 - **Individual services** started in separate terminals: Ctrl+C in each terminal.
+- **Full reset**: `pnpm dev:reset` stops containers and removes Docker volumes (Postgres data), giving you a clean slate.
 
 ### First-Time Setup
 

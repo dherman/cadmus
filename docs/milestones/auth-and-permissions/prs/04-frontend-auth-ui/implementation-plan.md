@@ -294,16 +294,16 @@ provider.awareness.setLocalStateField('user', {
 
 ## Verification
 
-- [ ] Visiting `/` without logging in redirects to `/login`
-- [ ] Registration creates a user and redirects to the dashboard
-- [ ] Login works with valid credentials, shows error for invalid
-- [ ] Dashboard shows user name and logout button
-- [ ] Document list loads (requires auth — server filters by permission)
-- [ ] Opening a document connects WebSocket with ws-token
-- [ ] Awareness shows real user name instead of random animal name
-- [ ] Logging out clears state and redirects to `/login`
-- [ ] Refreshing the page maintains the logged-in state
-- [ ] Long sessions survive token refresh (access token auto-renews)
+- [x] Visiting `/` without logging in redirects to `/login`
+- [x] Registration creates a user and redirects to the dashboard
+- [x] Login works with valid credentials, shows error for invalid
+- [x] Dashboard shows user name and logout button
+- [x] Document list loads (requires auth — server filters by permission)
+- [x] Opening a document connects WebSocket with ws-token
+- [x] Awareness shows real user name instead of random animal name
+- [x] Logging out clears state and redirects to `/login`
+- [x] Refreshing the page maintains the logged-in state
+- [x] Long sessions survive token refresh (access token auto-renews)
 - [x] `pnpm run format:check` passes
 - [x] `pnpm run build` succeeds (web package)
 
