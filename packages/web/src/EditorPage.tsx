@@ -79,7 +79,8 @@ function EditorPageInner({
       if (event.code === 4401) {
         try {
           const newToken = await getWsToken();
-          provider.url = `${provider.url.split('?')[0]}?token=${encodeURIComponent(newToken)}`;
+          (provider as unknown as { url: string }).url =
+            `${provider.url.split('?')[0]}?token=${encodeURIComponent(newToken)}`;
           provider.connect();
         } catch {
           // If we can't get a new token, the user will see disconnected status
