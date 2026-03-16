@@ -587,3 +587,276 @@ body {
   color: #6b7280;
   padding: 4rem 0;
 }
+
+/* Document card wrapper (for share button positioning) */
+.document-card-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.document-card-wrapper .document-card {
+  flex: 1;
+}
+
+.document-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.document-card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Role badges */
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.role-badge.role-edit {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.role-badge.role-comment {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.role-badge.role-read {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Share button */
+.btn-share {
+  padding: 6px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.btn-share:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Share dialog overlay */
+.share-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.share-dialog {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.share-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.share-dialog-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.share-dialog-close {
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.share-dialog-close:hover {
+  color: #111;
+}
+
+.share-dialog-error {
+  margin: 0 0 1rem;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.8125rem;
+}
+
+.share-dialog-loading {
+  text-align: center;
+  color: #6b7280;
+  padding: 1rem 0;
+}
+
+.share-dialog-list {
+  margin-bottom: 1rem;
+}
+
+.share-dialog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.share-dialog-row:last-child {
+  border-bottom: none;
+}
+
+.share-dialog-user {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.share-dialog-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-dialog-email {
+  font-size: 0.75rem;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-dialog-owner-badge {
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.share-dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.share-dialog-select {
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+}
+
+.share-dialog-remove {
+  padding: 4px 8px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: #fff;
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.share-dialog-remove:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+/* Share dialog invite form */
+.share-dialog-invite {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.share-dialog-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.share-dialog-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.share-dialog-invite-btn {
+  padding: 8px 14px;
+  flex-shrink: 0;
+}
+
+/* Read-only banner */
+.read-only-banner {
+  padding: 8px 12px;
+  background: #fefce8;
+  border-bottom: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Editor error state */
+.editor-error {
+  text-align: center;
+  padding: 4rem 0;
+  color: #6b7280;
+}
+
+.editor-error p {
+  margin: 0 0 1rem;
+}

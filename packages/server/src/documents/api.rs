@@ -10,7 +10,9 @@ use uuid::Uuid;
 
 use crate::auth::middleware::AuthUser;
 use crate::documents::permissions::{require_owner, require_permission, Permission};
-use crate::{db::DocumentRow, errors::AppError, AppState};
+use crate::db::{DocumentRow, DocumentWithRole};
+use crate::errors::AppError;
+use crate::AppState;
 
 #[derive(Serialize)]
 pub struct DocumentSummary {
@@ -18,6 +20,21 @@ pub struct DocumentSummary {
     pub title: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub role: String,
+    pub is_owner: bool,
+}
+
+impl From<DocumentWithRole> for DocumentSummary {
+    fn from(row: DocumentWithRole) -> Self {
+        Self {
+            id: row.id,
+            title: row.title,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+            role: row.role,
+            is_owner: row.is_owner,
+        }
+    }
 }
 
 impl From<DocumentRow> for DocumentSummary {
@@ -27,6 +44,8 @@ impl From<DocumentRow> for DocumentSummary {
             title: row.title,
             created_at: row.created_at,
             updated_at: row.updated_at,
+            role: "edit".to_string(),
+            is_owner: true,
         }
     }
 }
@@ -63,7 +82,7 @@ pub async fn list_documents(
 ) -> Result<Json<Vec<DocumentSummary>>, AppError> {
     let rows = state
         .db
-        .list_accessible_documents(auth.user_id)
+        .list_accessible_documents_with_role(auth.user_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
     let docs: Vec<DocumentSummary> = rows.into_iter().map(Into::into).collect();
@@ -101,14 +120,14 @@ pub async fn get_document(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<DocumentSummary>, AppError> {
-    require_permission(&state.db, auth.user_id, id, Permission::Read).await?;
-
     let row = state
         .db
-        .get_document(id)
+        .get_document_with_role(id, auth.user_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or_else(|| AppError::NotFound("Document not found".to_string()))?;
+        .ok_or_else(|| {
+            AppError::Forbidden("You don't have access to this document".to_string())
+        })?;
 
     Ok(Json(row.into()))
 }
