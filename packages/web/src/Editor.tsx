@@ -13,9 +13,10 @@ interface EditorProps {
   ydoc: Y.Doc;
   provider: WebsocketProvider;
   user: UserProfile | null;
+  editable?: boolean;
 }
 
-export function Editor({ ydoc, provider, user }: EditorProps) {
+export function Editor({ ydoc, provider, user, editable = true }: EditorProps) {
   const identity = useMemo(
     () => (user ? getUserIdentity(user) : { name: 'Anonymous', color: '#888888' }),
     [user],
@@ -30,13 +31,20 @@ export function Editor({ ydoc, provider, user }: EditorProps) {
         user: identity,
       }),
     ],
+    editable,
   });
 
   if (!editor) return null;
 
   return (
     <div className="editor-wrapper">
-      <Toolbar editor={editor} />
+      {editable ? (
+        <Toolbar editor={editor} />
+      ) : (
+        <div className="read-only-banner">
+          Read only — you can view this document but not edit it
+        </div>
+      )}
       <EditorContent editor={editor} />
     </div>
   );

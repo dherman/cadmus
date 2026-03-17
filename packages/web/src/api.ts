@@ -117,6 +117,8 @@ export interface DocumentSummary {
   title: string;
   created_at: string;
   updated_at: string;
+  role: 'read' | 'comment' | 'edit';
+  is_owner: boolean;
 }
 
 export async function listDocuments(): Promise<DocumentSummary[]> {
@@ -137,6 +139,63 @@ export async function createDocument(title: string): Promise<DocumentSummary> {
 
 export async function getDocument(id: string): Promise<DocumentSummary> {
   const res = await authFetch(`${API_BASE}/api/docs/${encodeURIComponent(id)}`);
-  if (!res.ok) throw new Error('Document not found');
+  if (!res.ok) {
+    if (res.status === 403) throw new Error('You don\u2019t have access to this document');
+    throw new Error('Document not found');
+  }
   return res.json();
+}
+
+// --- Sharing / Permissions API ---
+
+export interface PermissionEntry {
+  user_id: string;
+  email: string;
+  display_name: string;
+  role: string;
+  is_owner: boolean;
+}
+
+export async function listPermissions(docId: string): Promise<PermissionEntry[]> {
+  const res = await authFetch(`${API_BASE}/api/docs/${encodeURIComponent(docId)}/permissions`);
+  if (!res.ok) throw new Error('Failed to fetch permissions');
+  return res.json();
+}
+
+export async function addPermission(docId: string, email: string, role: string): Promise<void> {
+  const res = await authFetch(`${API_BASE}/api/docs/${encodeURIComponent(docId)}/permissions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, role }),
+  });
+  if (!res.ok) {
+    const body = await res.json();
+    throw new Error(body.error || 'Failed to add permission');
+  }
+}
+
+export async function updatePermission(docId: string, userId: string, role: string): Promise<void> {
+  const res = await authFetch(
+    `${API_BASE}/api/docs/${encodeURIComponent(docId)}/permissions/${encodeURIComponent(userId)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    },
+  );
+  if (!res.ok) {
+    const body = await res.json();
+    throw new Error(body.error || 'Failed to update permission');
+  }
+}
+
+export async function removePermission(docId: string, userId: string): Promise<void> {
+  const res = await authFetch(
+    `${API_BASE}/api/docs/${encodeURIComponent(docId)}/permissions/${encodeURIComponent(userId)}`,
+    { method: 'DELETE' },
+  );
+  if (!res.ok) {
+    const body = await res.json();
+    throw new Error(body.error || 'Failed to remove permission');
+  }
 }

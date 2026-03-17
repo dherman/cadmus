@@ -2,14 +2,14 @@
 
 ## Prerequisites
 
-- [ ] PR 3 (Permission Enforcement) merged — sharing endpoints available
-- [ ] PR 4 (Frontend Auth UI) merged — auth context, login/register working
+- [x] PR 3 (Permission Enforcement) merged — sharing endpoints available
+- [x] PR 4 (Frontend Auth UI) merged — auth context, login/register working
 
 ## Steps
 
 ### Step 1: Extend backend document responses with role info
 
-- [ ] Update `list_accessible_documents` query in `packages/server/src/db.rs` to include role and ownership:
+- [x] Update `list_accessible_documents` query in `packages/server/src/db.rs` to include role and ownership:
 
 ```rust
 #[derive(Debug, sqlx::FromRow)]
@@ -44,9 +44,9 @@ pub async fn list_accessible_documents_with_role(
 }
 ```
 
-- [ ] Add a similar `get_document_with_role` method for single-document fetch
+- [x] Add a similar `get_document_with_role` method for single-document fetch
 
-- [ ] Update `DocumentSummary` in `api.rs` to include `role` and `is_owner`:
+- [x] Update `DocumentSummary` in `api.rs` to include `role` and `is_owner`:
 
 ```rust
 #[derive(Serialize)]
@@ -60,11 +60,11 @@ pub struct DocumentSummary {
 }
 ```
 
-- [ ] Update `list_documents` and `get_document` handlers to use the new queries
+- [x] Update `list_documents` and `get_document` handlers to use the new queries
 
 ### Step 2: Update frontend DocumentSummary type
 
-- [ ] In `packages/web/src/api.ts`, extend the type:
+- [x] In `packages/web/src/api.ts`, extend the type:
 
 ```typescript
 export interface DocumentSummary {
@@ -79,7 +79,7 @@ export interface DocumentSummary {
 
 ### Step 3: Add sharing API functions
 
-- [ ] Add to `packages/web/src/api.ts`:
+- [x] Add to `packages/web/src/api.ts`:
 
 ```typescript
 export interface PermissionEntry {
@@ -119,7 +119,7 @@ export async function removePermission(docId: string, userId: string): Promise<v
 
 ### Step 4: Create ShareDialog component
 
-- [ ] Create `packages/web/src/ShareDialog.tsx`:
+- [x] Create `packages/web/src/ShareDialog.tsx`:
 
 ```tsx
 interface ShareDialogProps {
@@ -166,11 +166,11 @@ export function ShareDialog({ docId, docTitle, onClose }: ShareDialogProps) {
 }
 ```
 
-- [ ] Style with CSS: modal overlay, centered card, form layout consistent with existing app style
+- [x] Style with CSS: modal overlay, centered card, form layout consistent with existing app style
 
 ### Step 5: Add ShareDialog to Dashboard
 
-- [ ] In `packages/web/src/Dashboard.tsx`:
+- [x] In `packages/web/src/Dashboard.tsx`:
   - Add state for the active share dialog: `const [sharingDocId, setSharingDocId] = useState<string | null>(null)`
   - Show "Share" button on each document card where `doc.is_owner === true`
   - Render `ShareDialog` when `sharingDocId` is set
@@ -193,7 +193,7 @@ export function ShareDialog({ docId, docTitle, onClose }: ShareDialogProps) {
 
 ### Step 6: Add role badge to document cards
 
-- [ ] Show the user's role on each document card in the dashboard:
+- [x] Show the user's role on each document card in the dashboard:
 
 ```tsx
 function roleBadge(role: string) {
@@ -208,7 +208,7 @@ function roleBadge(role: string) {
 
 ### Step 7: Add Share button to editor header
 
-- [ ] In `packages/web/src/EditorPage.tsx`, add a "Share" button in the header when the user is the owner:
+- [x] In `packages/web/src/EditorPage.tsx`, add a "Share" button in the header when the user is the owner:
 
 ```tsx
 const [showShareDialog, setShowShareDialog] = useState(false);
@@ -220,7 +220,7 @@ const [showShareDialog, setShowShareDialog] = useState(false);
 
 ### Step 8: Make editor permission-aware
 
-- [ ] In `packages/web/src/EditorPage.tsx`, use the document's `role` to control editability:
+- [x] In `packages/web/src/EditorPage.tsx`, use the document's `role` to control editability:
 
 ```tsx
 const isEditable = doc?.role === 'edit';
@@ -228,7 +228,7 @@ const isEditable = doc?.role === 'edit';
 <Editor editable={isEditable} extensions={extensions} content={null} />;
 ```
 
-- [ ] Conditionally render the toolbar:
+- [x] Conditionally render the toolbar:
 
 ```tsx
 {
@@ -240,7 +240,7 @@ const isEditable = doc?.role === 'edit';
 }
 ```
 
-- [ ] Pass `editable` prop to the Tiptap `useEditor` hook:
+- [x] Pass `editable` prop to the Tiptap `useEditor` hook:
 
 ```typescript
 const editor = useEditor({
@@ -252,7 +252,7 @@ const editor = useEditor({
 
 ### Step 9: Add styles
 
-- [ ] Add CSS for:
+- [x] Add CSS for:
   - `.share-dialog-overlay` — fixed fullscreen backdrop with semi-transparent background
   - `.share-dialog` — centered white card with padding
   - `.role-badge` — small colored pill (green for edit, blue for comment, gray for read)
@@ -261,32 +261,32 @@ const editor = useEditor({
 
 ### Step 10: Handle error states
 
-- [ ] In `ShareDialog`:
+- [x] In `ShareDialog`:
   - Catch errors from invite/role change/remove API calls
   - Display inline error messages
   - On role change error, revert the dropdown to the previous value
 
-- [ ] In `EditorPage`:
+- [x] In `EditorPage`:
   - Handle 403 response when loading a document → redirect to dashboard with error message
   - Handle the case where permission is revoked while viewing (WS disconnects, API calls fail)
 
 ## Verification
 
-- [ ] Dashboard shows role badges on document cards
-- [ ] "Share" button only appears for document owners
-- [ ] Share dialog lists current collaborators with correct roles
-- [ ] Inviting a user by email works (they appear in the list)
-- [ ] Inviting a non-existent email shows "User not found" error
-- [ ] Changing a user's role updates immediately
-- [ ] Removing a user's access removes them from the list
-- [ ] Owner cannot remove their own access
-- [ ] Read-only users see the document without toolbar
-- [ ] Read-only users see a "Read only" banner
-- [ ] Read-only users cannot type in the editor
-- [ ] Edit users have full toolbar and editing capability
-- [ ] Navigating to a document without permission shows 403 → redirects to dashboard
-- [ ] `pnpm run format:check` passes
-- [ ] `pnpm run build` succeeds
+- [x] Dashboard shows role badges on document cards
+- [x] "Share" button only appears for document owners
+- [x] Share dialog lists current collaborators with correct roles
+- [x] Inviting a user by email works (they appear in the list)
+- [x] Inviting a non-existent email shows "User not found" error
+- [x] Changing a user's role updates immediately
+- [x] Removing a user's access removes them from the list
+- [x] Owner cannot remove their own access
+- [x] Read-only users see the document without toolbar
+- [x] Read-only users see a "Read only" banner
+- [x] Read-only users cannot type in the editor
+- [x] Edit users have full toolbar and editing capability
+- [x] Navigating to a document without permission shows 403 → redirects to dashboard
+- [x] `pnpm run format:check` passes
+- [x] `pnpm run build` succeeds
 
 ## Files Created/Modified
 

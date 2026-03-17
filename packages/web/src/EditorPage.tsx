@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Editor } from './Editor';
 import { Presence } from './Presence';
+import { ShareDialog } from './ShareDialog';
 import { useCollaboration } from './useCollaboration';
 import { useAuth } from './auth/AuthContext';
+import { getDocument, DocumentSummary } from './api';
 
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -11,20 +13,57 @@ export function EditorPage() {
   const { getWsToken, user } = useAuth();
   const [wsToken, setWsToken] = useState<string | null>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [doc, setDoc] = useState<DocumentSummary | null>(null);
+  const [docError, setDocError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    getWsToken()
-      .then((token) => {
-        if (!cancelled) setWsToken(token);
-      })
-      .catch((err) => {
-        if (!cancelled) setTokenError(err instanceof Error ? err.message : 'Failed to get token');
-      });
+
+    async function load() {
+      try {
+        const [token, docData] = await Promise.all([getWsToken(), getDocument(id!)]);
+        if (!cancelled) {
+          setWsToken(token);
+          setDoc(docData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : 'Failed to load';
+          if (msg.includes('access')) {
+            setDocError(msg);
+          } else {
+            setTokenError(msg);
+          }
+        }
+      }
+    }
+
+    load();
     return () => {
       cancelled = true;
     };
   }, [id, getWsToken]);
+
+  if (docError) {
+    return (
+      <div className="app">
+        <header className="app-header">
+          <button className="back-button" onClick={() => navigate('/')}>
+            &larr; Documents
+          </button>
+          <h1>Cadmus</h1>
+        </header>
+        <main className="app-main">
+          <div className="editor-error">
+            <p>{docError}</p>
+            <button className="btn-primary" onClick={() => navigate('/')}>
+              Back to Dashboard
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (tokenError) {
     return (
@@ -34,7 +73,7 @@ export function EditorPage() {
     );
   }
 
-  if (!wsToken) {
+  if (!wsToken || !doc) {
     return (
       <div className="app">
         <p className="auth-loading">Connecting...</p>
@@ -49,6 +88,7 @@ export function EditorPage() {
       navigate={navigate}
       user={user}
       getWsToken={getWsToken}
+      doc={doc}
     />
   );
 }
@@ -59,14 +99,19 @@ function EditorPageInner({
   navigate,
   user,
   getWsToken,
+  doc,
 }: {
   docId: string;
   wsToken: string;
   navigate: ReturnType<typeof useNavigate>;
   user: ReturnType<typeof useAuth>['user'];
   getWsToken: () => Promise<string>;
+  doc: DocumentSummary;
 }) {
   const { ydoc, provider, connectionStatus } = useCollaboration(docId, wsToken);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+
+  const isEditable = doc.role === 'edit';
 
   // Handle ws-token expiry (close code 4401)
   useEffect(() => {
@@ -103,10 +148,21 @@ function EditorPageInner({
         <h1>Cadmus</h1>
         <span className={`status-dot ${connectionStatus}`} />
         {provider && <Presence provider={provider} />}
+        {doc.is_owner && (
+          <button className="btn-share" onClick={() => setShowShareDialog(true)}>
+            Share
+          </button>
+        )}
       </header>
       <main className="app-main">
-        {ydoc && provider && <Editor ydoc={ydoc} provider={provider} user={user} />}
+        {ydoc && provider && (
+          <Editor ydoc={ydoc} provider={provider} user={user} editable={isEditable} />
+        )}
       </main>
+
+      {showShareDialog && (
+        <ShareDialog docId={docId} docTitle={doc.title} onClose={() => setShowShareDialog(false)} />
+      )}
     </div>
   );
 }

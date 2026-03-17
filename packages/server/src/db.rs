@@ -20,6 +20,19 @@ pub struct DocumentRow {
     pub updated_at: DateTime<Utc>,
 }
 
+/// A document row with the requesting user's role and ownership info.
+#[derive(Debug, sqlx::FromRow)]
+pub struct DocumentWithRole {
+    pub id: Uuid,
+    pub title: String,
+    pub schema_version: i32,
+    pub snapshot_key: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub role: String,
+    pub is_owner: bool,
+}
+
 /// A permission row joined with user info.
 #[derive(Debug, sqlx::FromRow)]
 pub struct PermissionWithUser {
@@ -292,6 +305,45 @@ impl Database {
         )
         .bind(user_id)
         .fetch_all(&self.pool)
+        .await
+    }
+
+    pub async fn list_accessible_documents_with_role(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<DocumentWithRole>, sqlx::Error> {
+        sqlx::query_as::<_, DocumentWithRole>(
+            r#"SELECT d.id, d.title, d.schema_version, d.snapshot_key,
+                      d.created_at, d.updated_at,
+                      dp.role,
+                      (d.created_by = $1) AS is_owner
+               FROM documents d
+               INNER JOIN document_permissions dp ON dp.document_id = d.id
+               WHERE dp.user_id = $1
+               ORDER BY d.updated_at DESC"#,
+        )
+        .bind(user_id)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    pub async fn get_document_with_role(
+        &self,
+        document_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Option<DocumentWithRole>, sqlx::Error> {
+        sqlx::query_as::<_, DocumentWithRole>(
+            r#"SELECT d.id, d.title, d.schema_version, d.snapshot_key,
+                      d.created_at, d.updated_at,
+                      dp.role,
+                      (d.created_by = $1) AS is_owner
+               FROM documents d
+               INNER JOIN document_permissions dp ON dp.document_id = d.id
+               WHERE d.id = $2 AND dp.user_id = $1"#,
+        )
+        .bind(user_id)
+        .bind(document_id)
+        .fetch_optional(&self.pool)
         .await
     }
 }
