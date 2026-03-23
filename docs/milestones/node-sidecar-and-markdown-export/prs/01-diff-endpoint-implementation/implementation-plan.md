@@ -138,7 +138,7 @@ curl -X POST http://localhost:3001/diff \
   }'
 ```
 
-- [ ] Verify the response contains a non-empty `steps` array.
+- [x] Verify the response contains a non-empty `steps` array.
 
 ### 5. Run tests and verify
 
@@ -152,8 +152,8 @@ curl -X POST http://localhost:3001/diff \
 - [x] `diff()` returns Steps for mark additions and removals
 - [x] `diff()` returns Steps for structural changes (paragraph → heading, etc.)
 - [x] `diff()` handles multi-edit scenarios (multiple changes in one call)
-- [ ] The `/diff` HTTP endpoint returns correct JSON responses
-- [ ] All existing sidecar functionality (serialize, parse, health) still works
+- [x] The `/diff` HTTP endpoint returns correct JSON responses
+- [x] All existing sidecar functionality (serialize, parse, health) still works
 
 ## Files Modified
 

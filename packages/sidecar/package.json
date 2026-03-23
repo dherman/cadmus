@@ -4,6 +4,7 @@
   "private": true,
   "license": "MIT",
   "description": "Stateless markdown↔JSON conversion service",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
