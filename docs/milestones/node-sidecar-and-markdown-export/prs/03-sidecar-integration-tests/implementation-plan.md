@@ -2,16 +2,16 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Diff Endpoint) is merged
-- [ ] PR 2 (Content Read Endpoints) is merged
-- [ ] Sidecar runs correctly (`pnpm dev:sidecar`)
-- [ ] Full dev stack runs (`pnpm dev`)
+- [x] PR 1 (Diff Endpoint) is merged
+- [x] PR 2 (Content Read Endpoints) is merged
+- [x] Sidecar runs correctly (`pnpm dev:sidecar`)
+- [x] Full dev stack runs (`pnpm dev`)
 
 ## Steps
 
 ### 1. Write serialize unit tests
 
-- [ ] Create `packages/sidecar/__tests__/serialize.test.ts`:
+- [x] Create `packages/sidecar/__tests__/serialize.test.ts`:
 
 ````typescript
 import { describe, it, expect } from 'vitest';
@@ -131,7 +131,7 @@ describe('serialize', () => {
 
 ### 2. Write parse unit tests
 
-- [ ] Create `packages/sidecar/__tests__/parse.test.ts`:
+- [x] Create `packages/sidecar/__tests__/parse.test.ts`:
 
 ````typescript
 import { describe, it, expect } from 'vitest';
@@ -208,7 +208,7 @@ describe('parse', () => {
 
 ### 3. Write round-trip integration tests
 
-- [ ] Create `packages/sidecar/__tests__/round-trip.test.ts`:
+- [x] Create `packages/sidecar/__tests__/round-trip.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
@@ -409,7 +409,7 @@ describe('round-trip fidelity', () => {
 
 ### 4. Add a `test` script to the sidecar package.json (if not already present)
 
-- [ ] Verify `packages/sidecar/package.json` has a test script:
+- [x] Verify `packages/sidecar/package.json` has a test script:
 
 ```json
 {
@@ -420,14 +420,14 @@ describe('round-trip fidelity', () => {
 }
 ```
 
-- [ ] Add a `vitest.config.ts` if needed (often not required with default config).
+- [x] Add a `vitest.config.ts` if needed (often not required with default config).
 
 ### 5. Run all tests
 
-- [ ] Run sidecar tests: `pnpm -F @cadmus/sidecar test`
-- [ ] Verify all round-trip, serialize, parse, and diff tests pass.
-- [ ] Run server tests: `cargo test` (with sidecar integration tests gated on env var)
-- [ ] Run `pnpm run format:check`
+- [x] Run sidecar tests: `pnpm -F @cadmus/sidecar test`
+- [x] Verify all round-trip, serialize, parse, and diff tests pass.
+- [x] Run server tests: `cargo test` (with sidecar integration tests gated on env var)
+- [x] Run `pnpm run format:check`
 
 ### 6. Document known non-round-trippable constructs
 
@@ -435,12 +435,12 @@ If any schema constructs fail to round-trip (unlikely with the designed schema b
 
 ## Verification
 
-- [ ] All serialize unit tests pass
-- [ ] All parse unit tests pass
-- [ ] All round-trip tests pass for every node type in the schema
-- [ ] All round-trip tests pass for every mark type in the schema
-- [ ] Round-trip tests pass for complex compositions (nested lists, mixed marks, etc.)
-- [ ] Diff unit tests from PR 1 continue to pass
+- [x] All serialize unit tests pass
+- [x] All parse unit tests pass
+- [x] All round-trip tests pass for every node type in the schema
+- [x] All round-trip tests pass for every mark type in the schema
+- [x] Round-trip tests pass for complex compositions (nested lists, mixed marks, etc.)
+- [x] Diff unit tests from PR 1 continue to pass
 
 ## Files Modified
 
