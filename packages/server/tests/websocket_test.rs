@@ -15,8 +15,8 @@ use tokio::net::TcpListener;
 use tokio::time::{timeout, Duration};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 use yrs::sync::{Message as YrsMessage, SyncMessage};
-use yrs::StateVector;
 use yrs::updates::encoder::Encode;
+use yrs::StateVector;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -54,11 +54,9 @@ async fn spawn_test_server() -> Option<(String, Arc<AppState>)> {
         return None;
     }
 
-    let storage = cadmus_server::documents::storage::SnapshotStorage::new(
-        S3_BUCKET,
-        Some(&s3_endpoint()),
-    )
-    .await;
+    let storage =
+        cadmus_server::documents::storage::SnapshotStorage::new(S3_BUCKET, Some(&s3_endpoint()))
+            .await;
 
     let state = Arc::new(AppState {
         db,
@@ -270,11 +268,7 @@ async fn two_clients_sync_edits() {
 
         let session = _state
             .document_sessions
-            .get_or_load(
-                doc_id.parse().unwrap(),
-                &_state.db,
-                &_state.storage,
-            )
+            .get_or_load(doc_id.parse().unwrap(), &_state.db, &_state.storage)
             .await
             .unwrap();
         let awareness = session.awareness.write().await;

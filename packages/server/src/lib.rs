@@ -27,27 +27,15 @@ pub struct AppState {
 pub fn build_router(state: Arc<AppState>) -> Router {
     Router::new()
         // Health check
-        .route(
-            "/health",
-            get(|| async { Json(json!({ "status": "ok" })) }),
-        )
+        .route("/health", get(|| async { Json(json!({ "status": "ok" })) }))
         // Document REST API
         .route("/api/docs", get(documents::api::list_documents))
         .route("/api/docs", post(documents::api::create_document))
         .route("/api/docs/{id}", get(documents::api::get_document))
-        .route(
-            "/api/docs/{id}",
-            delete(documents::api::delete_document),
-        )
-        .route(
-            "/api/docs/{id}",
-            patch(documents::api::update_document),
-        )
+        .route("/api/docs/{id}", delete(documents::api::delete_document))
+        .route("/api/docs/{id}", patch(documents::api::update_document))
         .route("/api/docs/{id}/content", get(documents::api::get_content))
-        .route(
-            "/api/docs/{id}/content",
-            post(documents::api::push_content),
-        )
+        .route("/api/docs/{id}/content", post(documents::api::push_content))
         // WebSocket endpoint for real-time collaboration
         .route("/api/docs/{id}/ws", get(websocket::handler::ws_upgrade))
         // Sharing / permissions

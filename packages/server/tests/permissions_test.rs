@@ -361,9 +361,7 @@ async fn test_owner_can_invite_change_role_remove() {
 
     // Change bob's role to edit
     let resp = client
-        .patch(format!(
-            "{base_url}/api/docs/{doc_id}/permissions/{bob_id}"
-        ))
+        .patch(format!("{base_url}/api/docs/{doc_id}/permissions/{bob_id}"))
         .bearer_auth(&owner_token)
         .json(&serde_json::json!({ "role": "edit" }))
         .send()
@@ -373,9 +371,7 @@ async fn test_owner_can_invite_change_role_remove() {
 
     // Remove bob's access
     let resp = client
-        .delete(format!(
-            "{base_url}/api/docs/{doc_id}/permissions/{bob_id}"
-        ))
+        .delete(format!("{base_url}/api/docs/{doc_id}/permissions/{bob_id}"))
         .bearer_auth(&owner_token)
         .send()
         .await
@@ -438,9 +434,7 @@ async fn test_document_listing_scoped_to_user() {
         .unwrap();
     assert_eq!(resp.status(), 200);
     let docs: Vec<serde_json::Value> = resp.json().await.unwrap();
-    assert!(docs
-        .iter()
-        .any(|d| d["id"].as_str() == Some(&alice_doc)));
+    assert!(docs.iter().any(|d| d["id"].as_str() == Some(&alice_doc)));
     assert!(!docs.iter().any(|d| d["id"].as_str() == Some(&bob_doc)));
 
     // Bob's list should include his doc but NOT alice's

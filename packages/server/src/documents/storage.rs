@@ -16,8 +16,7 @@ pub struct SnapshotStorage {
 
 impl SnapshotStorage {
     pub async fn new(bucket: &str, endpoint: Option<&str>) -> Self {
-        let mut config_loader =
-            aws_config::defaults(BehaviorVersion::latest()).region("us-east-1");
+        let mut config_loader = aws_config::defaults(BehaviorVersion::latest()).region("us-east-1");
         if let Some(endpoint) = endpoint {
             config_loader = config_loader.endpoint_url(endpoint);
         }
@@ -79,7 +78,10 @@ impl SnapshotStorage {
                 {
                     Ok(None)
                 } else {
-                    Err(AppError::Internal(format!("S3 download failed: {}", sdk_err)))
+                    Err(AppError::Internal(format!(
+                        "S3 download failed: {}",
+                        sdk_err
+                    )))
                 }
             }
         }

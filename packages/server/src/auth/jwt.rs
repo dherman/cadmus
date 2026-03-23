@@ -79,11 +79,7 @@ pub fn create_ws_token(user_id: Uuid, secret: &str) -> Result<String, AppError> 
     .map_err(|e| AppError::Internal(format!("Token creation failed: {}", e)))
 }
 
-pub fn validate_token(
-    token: &str,
-    expected_type: &str,
-    secret: &str,
-) -> Result<Claims, AppError> {
+pub fn validate_token(token: &str, expected_type: &str, secret: &str) -> Result<Claims, AppError> {
     let token_data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),

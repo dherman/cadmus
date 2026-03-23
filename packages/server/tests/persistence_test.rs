@@ -82,10 +82,7 @@ async fn test_document_persists_across_restart() {
     }
 
     // Flush to S3
-    session
-        .flush(&db, &storage)
-        .await
-        .expect("flush failed");
+    session.flush(&db, &storage).await.expect("flush failed");
 
     // Verify snapshot key is set
     let doc_row = db
@@ -114,7 +111,10 @@ async fn test_document_persists_across_restart() {
     let text = doc.get_or_insert_text("content");
     let txn = doc.transact();
     let content = text.get_string(&txn);
-    assert_eq!(content, "hello persistence", "document content should survive restart");
+    assert_eq!(
+        content, "hello persistence",
+        "document content should survive restart"
+    );
 
     // Cleanup
     db.delete_document(doc_id).await.ok();
@@ -222,23 +222,20 @@ async fn test_flush_clears_update_log() {
         .get_update_log(doc_id)
         .await
         .expect("failed to get update log");
-    assert!(!updates.is_empty(), "update_log should have entries before flush");
+    assert!(
+        !updates.is_empty(),
+        "update_log should have entries before flush"
+    );
 
     // Flush
-    session
-        .flush(&db, &storage)
-        .await
-        .expect("flush failed");
+    session.flush(&db, &storage).await.expect("flush failed");
 
     // Verify update log is cleared
     let updates = db
         .get_update_log(doc_id)
         .await
         .expect("failed to get update log");
-    assert!(
-        updates.is_empty(),
-        "update_log should be empty after flush"
-    );
+    assert!(updates.is_empty(), "update_log should be empty after flush");
 
     // Cleanup
     db.delete_document(doc_id).await.ok();

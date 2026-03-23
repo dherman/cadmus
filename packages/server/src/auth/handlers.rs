@@ -85,7 +85,13 @@ pub async fn register(
     }
 
     // Check for existing user
-    if state.db.get_user_by_email(&email).await.map_err(|e| AppError::Internal(e.to_string()))?.is_some() {
+    if state
+        .db
+        .get_user_by_email(&email)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .is_some()
+    {
         return Err(AppError::Conflict("Email already registered".to_string()));
     }
 
@@ -101,8 +107,12 @@ pub async fn register(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     // Issue tokens
-    let access_token =
-        jwt::create_access_token(user.id, &user.email, &user.display_name, &state.config.jwt_secret)?;
+    let access_token = jwt::create_access_token(
+        user.id,
+        &user.email,
+        &user.display_name,
+        &state.config.jwt_secret,
+    )?;
     let refresh_token = jwt::create_refresh_token(user.id, &state.config.jwt_secret)?;
 
     Ok((
@@ -139,8 +149,12 @@ pub async fn login(
         ));
     }
 
-    let access_token =
-        jwt::create_access_token(user.id, &user.email, &user.display_name, &state.config.jwt_secret)?;
+    let access_token = jwt::create_access_token(
+        user.id,
+        &user.email,
+        &user.display_name,
+        &state.config.jwt_secret,
+    )?;
     let refresh_token = jwt::create_refresh_token(user.id, &state.config.jwt_secret)?;
 
     Ok(Json(AuthResponse {
@@ -174,8 +188,12 @@ pub async fn refresh(
         .map_err(|e| AppError::Internal(e.to_string()))?
         .ok_or_else(|| AppError::Unauthorized("Invalid or expired token".to_string()))?;
 
-    let access_token =
-        jwt::create_access_token(user.id, &user.email, &user.display_name, &state.config.jwt_secret)?;
+    let access_token = jwt::create_access_token(
+        user.id,
+        &user.email,
+        &user.display_name,
+        &state.config.jwt_secret,
+    )?;
 
     Ok(Json(TokenResponse {
         access_token,

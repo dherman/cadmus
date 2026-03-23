@@ -192,12 +192,11 @@ impl Database {
     }
 
     pub async fn get_update_log(&self, document_id: Uuid) -> Result<Vec<Vec<u8>>, sqlx::Error> {
-        let rows: Vec<(Vec<u8>,)> = sqlx::query_as(
-            "SELECT data FROM update_log WHERE document_id = $1 ORDER BY id ASC",
-        )
-        .bind(document_id)
-        .fetch_all(&self.pool)
-        .await?;
+        let rows: Vec<(Vec<u8>,)> =
+            sqlx::query_as("SELECT data FROM update_log WHERE document_id = $1 ORDER BY id ASC")
+                .bind(document_id)
+                .fetch_all(&self.pool)
+                .await?;
         Ok(rows.into_iter().map(|r| r.0).collect())
     }
 
@@ -282,13 +281,12 @@ impl Database {
         document_id: Uuid,
         user_id: Uuid,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM document_permissions WHERE document_id = $1 AND user_id = $2",
-        )
-        .bind(document_id)
-        .bind(user_id)
-        .execute(&self.pool)
-        .await?;
+        let result =
+            sqlx::query("DELETE FROM document_permissions WHERE document_id = $1 AND user_id = $2")
+                .bind(document_id)
+                .bind(user_id)
+                .execute(&self.pool)
+                .await?;
         Ok(result.rows_affected() > 0)
     }
 

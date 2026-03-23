@@ -173,8 +173,7 @@ pub async fn add_permission(
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
     // Validate role
-    Permission::from_str(&body.role)
-        .ok_or_else(|| AppError::BadRequest("Invalid role".into()))?;
+    Permission::from_str(&body.role).ok_or_else(|| AppError::BadRequest("Invalid role".into()))?;
 
     // Check if permission already exists
     if state
@@ -211,8 +210,7 @@ pub async fn update_permission_handler(
     }
 
     // Validate role
-    Permission::from_str(&body.role)
-        .ok_or_else(|| AppError::BadRequest("Invalid role".into()))?;
+    Permission::from_str(&body.role).ok_or_else(|| AppError::BadRequest("Invalid role".into()))?;
 
     let updated = state
         .db
@@ -235,9 +233,7 @@ pub async fn delete_permission_handler(
     require_owner(&state.db, auth.user_id, doc_id).await?;
 
     if target_user_id == auth.user_id {
-        return Err(AppError::BadRequest(
-            "Cannot remove your own access".into(),
-        ));
+        return Err(AppError::BadRequest("Cannot remove your own access".into()));
     }
 
     let deleted = state
