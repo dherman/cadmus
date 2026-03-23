@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- [ ] Milestone 3 (Auth and Permissions) is merged
-- [ ] Sidecar dev server runs successfully (`pnpm dev:sidecar`)
+- [x] Milestone 3 (Auth and Permissions) is merged
+- [x] Sidecar dev server runs successfully (`pnpm dev:sidecar`)
 
 ## Steps
 
