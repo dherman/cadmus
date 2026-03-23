@@ -9,8 +9,8 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::auth::middleware::AuthUser;
-use crate::documents::permissions::{require_owner, require_permission, Permission};
 use crate::db::{DocumentRow, DocumentWithRole};
+use crate::documents::permissions::{require_owner, require_permission, Permission};
 use crate::errors::AppError;
 use crate::AppState;
 
@@ -125,9 +125,7 @@ pub async fn get_document(
         .get_document_with_role(id, auth.user_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or_else(|| {
-            AppError::Forbidden("You don't have access to this document".to_string())
-        })?;
+        .ok_or_else(|| AppError::Forbidden("You don't have access to this document".to_string()))?;
 
     Ok(Json(row.into()))
 }
@@ -192,13 +190,50 @@ pub async fn update_document(
 
 pub async fn get_content(
     auth: AuthUser,
-    State(_state): State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
-    Query(_query): Query<ContentQuery>,
+    Query(query): Query<ContentQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    require_permission(&_state.db, auth.user_id, id, Permission::Read).await?;
-    // TODO: Load document from session manager, serialize via sidecar if markdown requested
-    Err(AppError::Internal("Not yet implemented".to_string()))
+    require_permission(&state.db, auth.user_id, id, Permission::Read).await?;
+
+    let format = query.format.as_deref().unwrap_or("json");
+
+    if format != "json" && format != "markdown" {
+        return Err(AppError::BadRequest(
+            "Invalid format: must be 'json' or 'markdown'".to_string(),
+        ));
+    }
+
+    // Load or get the document session
+    let session = state
+        .document_sessions
+        .get_or_load(id, &state.db, &state.storage)
+        .await?;
+
+    // Extract ProseMirror JSON from the Yrs document
+    let doc_json = {
+        let awareness = session.awareness.read().await;
+        let yrs_doc = awareness.doc();
+        super::yrs_json::extract_prosemirror_json(yrs_doc)
+            .unwrap_or_else(|_| super::yrs_json::empty_doc_json())
+    };
+
+    match format {
+        "markdown" => {
+            let markdown = state.sidecar.serialize(doc_json, 1).await.map_err(|e| {
+                AppError::BadGateway(format!("Markdown conversion service error: {}", e))
+            })?;
+
+            Ok(Json(serde_json::json!({
+                "format": "markdown",
+                "content": markdown
+            })))
+        }
+        _ => Ok(Json(serde_json::json!({
+            "format": "json",
+            "content": doc_json
+        }))),
+    }
 }
 
 pub async fn push_content(

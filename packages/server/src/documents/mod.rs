@@ -1,6 +1,7 @@
 pub mod api;
 pub mod permissions;
 pub mod storage;
+pub mod yrs_json;
 
 use dashmap::DashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -68,28 +69,26 @@ impl DocumentSession {
         // try_read() is safe here because start_update_logging is called right
         // after session construction, before the session is shared — no other
         // task can hold the lock yet.
-        let awareness = self.awareness.try_read().expect(
-            "start_update_logging must be called before the session is shared",
-        );
-        let sub = awareness
-            .doc()
-            .observe_update_v1(move |_txn, event| {
-                let update_data = event.update.to_vec();
-                let db = db.clone();
+        let awareness = self
+            .awareness
+            .try_read()
+            .expect("start_update_logging must be called before the session is shared");
+        let sub = awareness.doc().observe_update_v1(move |_txn, event| {
+            let update_data = event.update.to_vec();
+            let db = db.clone();
 
-                // Increment update counter and notify flush loop if threshold reached
-                let count =
-                    unsafe { &*update_count }.fetch_add(1, Ordering::Relaxed) + 1;
-                if count >= 100 {
-                    unsafe { &*flush_notify }.notify_one();
+            // Increment update counter and notify flush loop if threshold reached
+            let count = unsafe { &*update_count }.fetch_add(1, Ordering::Relaxed) + 1;
+            if count >= 100 {
+                unsafe { &*flush_notify }.notify_one();
+            }
+
+            tokio::spawn(async move {
+                if let Err(e) = db.append_update_log(doc_id, &update_data).await {
+                    tracing::error!("Failed to log update for doc {}: {}", doc_id, e);
                 }
-
-                tokio::spawn(async move {
-                    if let Err(e) = db.append_update_log(doc_id, &update_data).await {
-                        tracing::error!("Failed to log update for doc {}: {}", doc_id, e);
-                    }
-                });
             });
+        });
         // Leak the subscription so it lives as long as the Doc
         if let Ok(sub) = sub {
             std::mem::forget(sub);
@@ -97,11 +96,7 @@ impl DocumentSession {
     }
 
     /// Flush the current document state to S3 and clear the update log.
-    pub async fn flush(
-        &self,
-        db: &Database,
-        storage: &SnapshotStorage,
-    ) -> Result<(), AppError> {
+    pub async fn flush(&self, db: &Database, storage: &SnapshotStorage) -> Result<(), AppError> {
         // Encode the full doc state. The transaction and awareness must be
         // dropped before any .await because yrs::Transaction is !Send.
         let state = {
@@ -213,11 +208,7 @@ impl SessionManager {
     }
 
     /// Spawn a background task that flushes the document periodically.
-    fn spawn_flush_loop(
-        session: Arc<DocumentSession>,
-        db: Database,
-        storage: SnapshotStorage,
-    ) {
+    fn spawn_flush_loop(session: Arc<DocumentSession>, db: Database, storage: SnapshotStorage) {
         tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -255,11 +246,7 @@ impl SessionManager {
             if session.connection_count.load(Ordering::Relaxed) == 0 {
                 // Final flush
                 if let Err(e) = session.flush(&db, &storage).await {
-                    tracing::error!(
-                        "Final flush failed for doc {}: {}",
-                        session.doc_id,
-                        e
-                    );
+                    tracing::error!("Final flush failed for doc {}: {}", session.doc_id, e);
                 }
                 // Remove from memory
                 manager.unload(session.doc_id);
