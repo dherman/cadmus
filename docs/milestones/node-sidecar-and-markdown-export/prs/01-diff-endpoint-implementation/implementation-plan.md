@@ -127,7 +127,7 @@ describe('diff', () => {
 
 ### 4. Verify the diff endpoint works via the HTTP server
 
-- [ ] Start the sidecar (`pnpm dev:sidecar`) and test manually:
+- [x] Start the sidecar (`pnpm dev:sidecar`) and test manually:
 
 ```bash
 curl -X POST http://localhost:3001/diff \
