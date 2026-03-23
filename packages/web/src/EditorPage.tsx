@@ -140,7 +140,11 @@ function EditorPageInner({
     setExportError(null);
     try {
       const result = await fetchDocumentContent(docId, 'markdown');
-      downloadMarkdown(`${slugify(doc.title)}.md`, result.content as string);
+      const markdown = result.content as string;
+      // Derive filename from first heading in markdown, falling back to doc title
+      const headingMatch = markdown.match(/^#\s+(.+)$/m);
+      const title = headingMatch ? headingMatch[1].trim() : doc.title;
+      downloadMarkdown(`${slugify(title)}.md`, markdown);
     } catch (err) {
       setExportError(err instanceof Error ? err.message : 'Export failed');
     } finally {
