@@ -8,7 +8,7 @@
 
 ### 1. Add `fetchDocumentContent` to the API module
 
-- [ ] Add to `packages/web/src/api.ts`:
+- [x] Add to `packages/web/src/api.ts`:
 
 ```typescript
 export interface DocumentContent {
@@ -33,7 +33,7 @@ export async function fetchDocumentContent(
 
 ### 2. Add the export handler and button to `EditorPage.tsx`
 
-- [ ] Add a `downloadMarkdown` helper at the top of the file (or in a utility module):
+- [x] Add a `downloadMarkdown` helper at the top of the file (or in a utility module):
 
 ```typescript
 function downloadMarkdown(filename: string, content: string) {
@@ -57,7 +57,7 @@ function slugify(title: string): string {
 }
 ```
 
-- [ ] In `EditorPageInner`, add export state and handler:
+- [x] In `EditorPageInner`, add export state and handler:
 
 ```typescript
 const [exporting, setExporting] = useState(false);
@@ -77,7 +77,7 @@ async function handleExport() {
 }
 ```
 
-- [ ] Add the Export button and error display to the header JSX, alongside the existing Share button:
+- [x] Add the Export button and error display to the header JSX, alongside the existing Share button:
 
 ```tsx
 <button className="btn-export" onClick={handleExport} disabled={exporting}>
@@ -88,11 +88,11 @@ async function handleExport() {
 }
 ```
 
-- [ ] Add `fetchDocumentContent` to the import from `./api`.
+- [x] Add `fetchDocumentContent` to the import from `./api`.
 
 ### 3. Add styles
 
-- [ ] Add minimal CSS to the existing stylesheet (whichever file contains `.btn-share` styles):
+- [x] Add minimal CSS to the existing stylesheet (whichever file contains `.btn-share` styles):
 
 ```css
 .btn-export {
@@ -129,8 +129,8 @@ async function handleExport() {
 
 ### 5. Run tests and check formatting
 
-- [ ] Run `pnpm -F @cadmus/web build` — verify TypeScript compiles without errors.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/web build` — verify TypeScript compiles without errors.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
