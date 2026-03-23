@@ -2,24 +2,24 @@
 
 ## Prerequisites
 
-- [ ] Milestone 3 (Auth and Permissions) is merged
-- [ ] Sidecar dev server runs successfully (`pnpm dev:sidecar`)
+- [x] Milestone 3 (Auth and Permissions) is merged
+- [x] Sidecar dev server runs successfully (`pnpm dev:sidecar`)
 
 ## Steps
 
 ### 1. Add `prosemirror-recreate-transform` dependency
 
-- [ ] Add the dependency to `packages/sidecar/package.json`:
+- [x] Add the dependency to `packages/sidecar/package.json`:
 
 ```bash
 cd packages/sidecar && pnpm add prosemirror-recreate-transform
 ```
 
-- [ ] Run `pnpm install` from the workspace root to update the lockfile.
+- [x] Run `pnpm install` from the workspace root to update the lockfile.
 
 ### 2. Implement the diff function
 
-- [ ] Replace the placeholder in `packages/sidecar/src/diff.ts` with the real implementation:
+- [x] Replace the placeholder in `packages/sidecar/src/diff.ts` with the real implementation:
 
 ```typescript
 import { Editor } from '@tiptap/core';
@@ -48,7 +48,7 @@ export function diff(oldDoc: JSONContent, newDoc: JSONContent): object[] {
 
 ### 3. Write unit tests for the diff function
 
-- [ ] Create `packages/sidecar/__tests__/diff.test.ts` with the following test cases:
+- [x] Create `packages/sidecar/__tests__/diff.test.ts` with the following test cases:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
@@ -127,7 +127,7 @@ describe('diff', () => {
 
 ### 4. Verify the diff endpoint works via the HTTP server
 
-- [ ] Start the sidecar (`pnpm dev:sidecar`) and test manually:
+- [x] Start the sidecar (`pnpm dev:sidecar`) and test manually:
 
 ```bash
 curl -X POST http://localhost:3001/diff \
@@ -138,22 +138,22 @@ curl -X POST http://localhost:3001/diff \
   }'
 ```
 
-- [ ] Verify the response contains a non-empty `steps` array.
+- [x] Verify the response contains a non-empty `steps` array.
 
 ### 5. Run tests and verify
 
-- [ ] Run `pnpm -F @cadmus/sidecar test` — all diff tests pass.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/sidecar test` — all diff tests pass.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] `diff()` returns empty array for identical documents
-- [ ] `diff()` returns Steps for text insertions, deletions, and replacements
-- [ ] `diff()` returns Steps for mark additions and removals
-- [ ] `diff()` returns Steps for structural changes (paragraph → heading, etc.)
-- [ ] `diff()` handles multi-edit scenarios (multiple changes in one call)
-- [ ] The `/diff` HTTP endpoint returns correct JSON responses
-- [ ] All existing sidecar functionality (serialize, parse, health) still works
+- [x] `diff()` returns empty array for identical documents
+- [x] `diff()` returns Steps for text insertions, deletions, and replacements
+- [x] `diff()` returns Steps for mark additions and removals
+- [x] `diff()` returns Steps for structural changes (paragraph → heading, etc.)
+- [x] `diff()` handles multi-edit scenarios (multiple changes in one call)
+- [x] The `/diff` HTTP endpoint returns correct JSON responses
+- [x] All existing sidecar functionality (serialize, parse, health) still works
 
 ## Files Modified
 
