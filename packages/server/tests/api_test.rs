@@ -450,3 +450,279 @@ async fn test_websocket_rejects_nonexistent_document() {
         "WebSocket upgrade should fail for nonexistent document"
     );
 }
+
+// --- Content endpoint tests ---
+
+#[tokio::test]
+async fn test_get_content_returns_json_by_default() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
+
+    // Create a document
+    let resp = client
+        .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "title": "Content Test" }))
+        .send()
+        .await
+        .unwrap();
+    let doc: serde_json::Value = resp.json().await.unwrap();
+    let doc_id = doc["id"].as_str().unwrap();
+
+    // Get content (default format = json)
+    let resp = client
+        .get(format!("{base_url}/api/docs/{doc_id}/content"))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+    let body: serde_json::Value = resp.json().await.unwrap();
+    assert_eq!(body["format"], "json");
+    assert_eq!(body["content"]["type"], "doc");
+    assert!(body["content"]["content"].is_array());
+
+    // Cleanup
+    client
+        .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .ok();
+}
+
+#[tokio::test]
+async fn test_get_content_explicit_json_format() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
+
+    let resp = client
+        .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "title": "JSON Format Test" }))
+        .send()
+        .await
+        .unwrap();
+    let doc: serde_json::Value = resp.json().await.unwrap();
+    let doc_id = doc["id"].as_str().unwrap();
+
+    let resp = client
+        .get(format!("{base_url}/api/docs/{doc_id}/content?format=json"))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+    let body: serde_json::Value = resp.json().await.unwrap();
+    assert_eq!(body["format"], "json");
+    assert_eq!(body["content"]["type"], "doc");
+
+    // Cleanup
+    client
+        .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .ok();
+}
+
+#[tokio::test]
+async fn test_get_content_markdown_format() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
+
+    let resp = client
+        .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "title": "Markdown Format Test" }))
+        .send()
+        .await
+        .unwrap();
+    let doc: serde_json::Value = resp.json().await.unwrap();
+    let doc_id = doc["id"].as_str().unwrap();
+
+    // This test requires the sidecar to be running.
+    // If it fails with 502, that's expected when sidecar is down.
+    let resp = client
+        .get(format!(
+            "{base_url}/api/docs/{doc_id}/content?format=markdown"
+        ))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .unwrap();
+
+    // Accept either 200 (sidecar running) or 502 (sidecar not running)
+    let status = resp.status();
+    if status == 200 {
+        let body: serde_json::Value = resp.json().await.unwrap();
+        assert_eq!(body["format"], "markdown");
+        assert!(body["content"].is_string());
+    } else {
+        assert_eq!(
+            status, 502,
+            "Expected 200 (sidecar running) or 502 (sidecar not running), got {status}"
+        );
+    }
+
+    // Cleanup
+    client
+        .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .ok();
+}
+
+#[tokio::test]
+async fn test_get_content_invalid_format_returns_400() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
+
+    let resp = client
+        .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "title": "Invalid Format Test" }))
+        .send()
+        .await
+        .unwrap();
+    let doc: serde_json::Value = resp.json().await.unwrap();
+    let doc_id = doc["id"].as_str().unwrap();
+
+    let resp = client
+        .get(format!(
+            "{base_url}/api/docs/{doc_id}/content?format=invalid"
+        ))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 400);
+
+    // Cleanup
+    client
+        .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .ok();
+}
+
+#[tokio::test]
+async fn test_get_content_unauthorized_returns_403() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let owner_token = register_test_user(&client, &base_url).await;
+    let other_token = register_test_user(&client, &base_url).await;
+
+    // Owner creates a document
+    let resp = client
+        .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&owner_token)
+        .json(&serde_json::json!({ "title": "Private Doc" }))
+        .send()
+        .await
+        .unwrap();
+    let doc: serde_json::Value = resp.json().await.unwrap();
+    let doc_id = doc["id"].as_str().unwrap();
+
+    // Other user tries to get content — should be 403
+    let resp = client
+        .get(format!("{base_url}/api/docs/{doc_id}/content"))
+        .bearer_auth(&other_token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 403);
+
+    // Cleanup
+    client
+        .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&owner_token)
+        .send()
+        .await
+        .ok();
+}
+
+#[tokio::test]
+async fn test_get_content_unauthenticated_returns_401() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+
+    // Try to get content without auth
+    let resp = client
+        .get(format!(
+            "{base_url}/api/docs/00000000-0000-0000-0000-000000000000/content"
+        ))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 401);
+}
+
+#[tokio::test]
+async fn test_get_content_empty_doc_returns_default() {
+    let Some(base_url) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let token = register_test_user(&client, &base_url).await;
+
+    // Create a document (no edits through WebSocket)
+    let resp = client
+        .post(format!("{base_url}/api/docs"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "title": "Empty Doc" }))
+        .send()
+        .await
+        .unwrap();
+    let doc: serde_json::Value = resp.json().await.unwrap();
+    let doc_id = doc["id"].as_str().unwrap();
+
+    let resp = client
+        .get(format!("{base_url}/api/docs/{doc_id}/content"))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+    let body: serde_json::Value = resp.json().await.unwrap();
+
+    // Should return the default empty doc
+    assert_eq!(body["format"], "json");
+    assert_eq!(body["content"]["type"], "doc");
+    let content = body["content"]["content"].as_array().unwrap();
+    assert_eq!(content.len(), 1);
+    assert_eq!(content[0]["type"], "paragraph");
+
+    // Cleanup
+    client
+        .delete(format!("{base_url}/api/docs/{doc_id}"))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .ok();
+}

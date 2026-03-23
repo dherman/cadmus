@@ -9,6 +9,7 @@ pub enum AppError {
     Forbidden(String),
     BadRequest(String),
     Conflict(String),
+    BadGateway(String),
     Internal(String),
 }
 
@@ -20,6 +21,7 @@ impl std::fmt::Display for AppError {
             AppError::Forbidden(msg) => write!(f, "Forbidden: {}", msg),
             AppError::BadRequest(msg) => write!(f, "Bad request: {}", msg),
             AppError::Conflict(msg) => write!(f, "Conflict: {}", msg),
+            AppError::BadGateway(msg) => write!(f, "Bad gateway: {}", msg),
             AppError::Internal(msg) => write!(f, "Internal error: {}", msg),
         }
     }
@@ -33,6 +35,7 @@ impl IntoResponse for AppError {
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            AppError::BadGateway(msg) => (StatusCode::BAD_GATEWAY, msg),
             AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
 

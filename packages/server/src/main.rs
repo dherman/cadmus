@@ -17,11 +17,8 @@ async fn main() {
         .await
         .expect("Failed to run database migrations");
 
-    let storage = documents::storage::SnapshotStorage::new(
-        &cfg.s3_bucket,
-        cfg.s3_endpoint.as_deref(),
-    )
-    .await;
+    let storage =
+        documents::storage::SnapshotStorage::new(&cfg.s3_bucket, cfg.s3_endpoint.as_deref()).await;
 
     let state = Arc::new(AppState {
         db: database,

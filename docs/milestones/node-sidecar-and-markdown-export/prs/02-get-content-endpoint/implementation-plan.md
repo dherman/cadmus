@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- [ ] Milestone 3 (Auth and Permissions) is merged
-- [ ] Sidecar dev server runs (`pnpm dev:sidecar`) with working `/serialize` endpoint
+- [x] Milestone 3 (Auth and Permissions) is merged
+- [x] Sidecar dev server runs (`pnpm dev:sidecar`) with working `/serialize` endpoint
 
 ## Risk Note
 
@@ -13,7 +13,7 @@
 
 ### 1. Create the Yrs XML → ProseMirror JSON extraction module
 
-- [ ] Create `packages/server/src/documents/yrs_json.rs`:
+- [x] Create `packages/server/src/documents/yrs_json.rs`:
 
 ```rust
 use serde_json::{json, Value};
@@ -60,7 +60,7 @@ pub fn empty_doc_json() -> Value {
 
 The full implementation of `extract_children` will need to handle `XmlElement` (block/inline nodes), `XmlText` (text with marks), and their attributes. The Yrs XML model maps cleanly to ProseMirror's node tree — each `XmlElement` tag corresponds to a ProseMirror node type, and attributes map to node attrs.
 
-- [ ] Register the module in `packages/server/src/documents/mod.rs`:
+- [x] Register the module in `packages/server/src/documents/mod.rs`:
 
 ```rust
 pub mod yrs_json;
@@ -68,7 +68,7 @@ pub mod yrs_json;
 
 ### 2. Implement the `get_content` handler
 
-- [ ] Update `packages/server/src/documents/api.rs` — replace the TODO stub:
+- [x] Update `packages/server/src/documents/api.rs` — replace the TODO stub:
 
 ```rust
 pub async fn get_content(
@@ -130,13 +130,13 @@ pub async fn get_content(
 
 ### 3. Add `BadGateway` error variant
 
-- [ ] Add a `BadGateway` variant to `AppError` in `packages/server/src/errors.rs`:
+- [x] Add a `BadGateway` variant to `AppError` in `packages/server/src/errors.rs`:
 
 ```rust
 BadGateway(String),  // 502 — sidecar or upstream service error
 ```
 
-- [ ] Add the match arm in the `IntoResponse` impl:
+- [x] Add the match arm in the `IntoResponse` impl:
 
 ```rust
 AppError::BadGateway(msg) => {
@@ -146,29 +146,29 @@ AppError::BadGateway(msg) => {
 
 ### 4. Verify the `get_content` endpoint works
 
-- [ ] Start the full dev environment: `pnpm dev`
-- [ ] Register a user and create a document via the UI.
-- [ ] Edit the document with some content (headings, bold text, etc.).
-- [ ] Test JSON format:
+- [x] Start the full dev environment: `pnpm dev`
+- [x] Register a user and create a document via the UI.
+- [x] Edit the document with some content (headings, bold text, etc.).
+- [x] Test JSON format:
 
 ```bash
 curl -H "Authorization: Bearer <token>" \
   http://localhost:8080/api/docs/<doc-id>/content
 ```
 
-- [ ] Test markdown format:
+- [x] Test markdown format:
 
 ```bash
 curl -H "Authorization: Bearer <token>" \
   "http://localhost:8080/api/docs/<doc-id>/content?format=markdown"
 ```
 
-- [ ] Verify 403 for a user without access.
-- [ ] Verify 400 for `?format=invalid`.
+- [x] Verify 403 for a user without access.
+- [x] Verify 400 for `?format=invalid`.
 
 ### 5. Write Rust tests for the content endpoint
 
-- [ ] Add content endpoint tests to `packages/server/tests/api_test.rs` (or a new `content_test.rs`):
+- [x] Add content endpoint tests to `packages/server/tests/api_test.rs` (or a new `content_test.rs`):
 
 Test cases:
 
@@ -181,28 +181,29 @@ Test cases:
 
 ### 6. Run tests and verify
 
-- [ ] Run `cargo test` — all tests pass.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `cargo test` — all tests pass.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] `GET /api/docs/{id}/content` returns ProseMirror JSON by default
-- [ ] `GET /api/docs/{id}/content?format=json` returns ProseMirror JSON
-- [ ] `GET /api/docs/{id}/content?format=markdown` returns canonical markdown
-- [ ] Returns 401 without auth token
-- [ ] Returns 403 for users without Read permission
-- [ ] Returns 400 for invalid format values
-- [ ] Returns default empty doc for a newly created document with no edits
-- [ ] Markdown output matches what the frontend editor would produce (same schema)
-- [ ] Endpoint works for documents actively being edited (live session in memory)
-- [ ] Endpoint works for documents not in memory (loads from S3 + update log)
+- [x] `GET /api/docs/{id}/content` returns ProseMirror JSON by default
+- [x] `GET /api/docs/{id}/content?format=json` returns ProseMirror JSON
+- [x] `GET /api/docs/{id}/content?format=markdown` returns canonical markdown
+- [x] Returns 401 without auth token
+- [x] Returns 403 for users without Read permission
+- [x] Returns 400 for invalid format values
+- [x] Returns default empty doc for a newly created document with no edits
+- [x] Markdown output matches what the frontend editor would produce (same schema)
+- [x] Endpoint works for documents actively being edited (live session in memory)
+- [x] Endpoint works for documents not in memory (loads from S3 + update log)
 
 ## Files Modified
 
-| File                                        | Change                                     |
-| ------------------------------------------- | ------------------------------------------ |
-| `packages/server/src/documents/yrs_json.rs` | New: Yrs XML → ProseMirror JSON extraction |
-| `packages/server/src/documents/mod.rs`      | Register `yrs_json` module                 |
-| `packages/server/src/documents/api.rs`      | Implement `get_content` handler            |
-| `packages/server/src/errors.rs`             | Add `BadGateway` variant                   |
-| `packages/server/tests/api_test.rs`         | Add content endpoint tests                 |
+| File                                        | Change                                       |
+| ------------------------------------------- | -------------------------------------------- |
+| `packages/server/src/documents/yrs_json.rs` | New: Yrs XML → ProseMirror JSON extraction   |
+| `packages/server/src/documents/mod.rs`      | Register `yrs_json` module                   |
+| `packages/server/src/documents/api.rs`      | Implement `get_content` handler              |
+| `packages/server/src/errors.rs`             | Add `BadGateway` variant                     |
+| `packages/server/tests/api_test.rs`         | Add content endpoint tests                   |
+| `packages/server/tests/content_test.rs`     | New: edited-doc + flush/reload content tests |

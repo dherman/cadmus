@@ -58,7 +58,10 @@ impl SidecarClient {
         let resp: SerializeResponse = self
             .client
             .post(format!("{}/serialize", self.base_url))
-            .json(&SerializeRequest { doc, schema_version })
+            .json(&SerializeRequest {
+                doc,
+                schema_version,
+            })
             .send()
             .await?
             .json()
@@ -75,7 +78,10 @@ impl SidecarClient {
         let resp: ParseResponse = self
             .client
             .post(format!("{}/parse", self.base_url))
-            .json(&ParseRequest { markdown, schema_version })
+            .json(&ParseRequest {
+                markdown,
+                schema_version,
+            })
             .send()
             .await?
             .json()

@@ -1,8 +1,8 @@
+use axum::extract::ws::Message;
 use axum::{
     extract::{ws::WebSocketUpgrade, Path, Query, State},
     response::IntoResponse,
 };
-use axum::extract::ws::Message;
 use futures_util::StreamExt;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -39,12 +39,11 @@ pub async fn ws_upgrade(
 ) -> Result<impl IntoResponse, AppError> {
     // Validate ws-token
     let claims = crate::auth::jwt::validate_token(&params.token, "ws", &state.config.jwt_secret)?;
-    let user_id = Uuid::parse_str(&claims.sub)
-        .map_err(|_| AppError::Unauthorized("Invalid token".into()))?;
+    let user_id =
+        Uuid::parse_str(&claims.sub).map_err(|_| AppError::Unauthorized("Invalid token".into()))?;
 
     // Check document permission
-    let permission =
-        require_permission(&state.db, user_id, doc_id, Permission::Read).await?;
+    let permission = require_permission(&state.db, user_id, doc_id, Permission::Read).await?;
 
     // get_or_load checks the in-memory cache first, then falls back to
     // loading from the database + S3. If the document doesn't exist in either
@@ -74,7 +73,10 @@ async fn handle_ws(
     db: crate::db::Database,
     storage: crate::documents::storage::SnapshotStorage,
 ) {
-    tracing::info!("WebSocket connection opened for document {}", session.doc_id);
+    tracing::info!(
+        "WebSocket connection opened for document {}",
+        session.doc_id
+    );
     let (sink, stream) = socket.split();
     let sink = Arc::new(Mutex::new(AxumSink(sink)));
 
@@ -98,7 +100,10 @@ async fn handle_ws(
         .broadcast_group
         .subscribe_with(sink, binary_stream, protocol);
     match sub.completed().await {
-        Ok(_) => tracing::info!("WebSocket connection closed for document {}", session.doc_id),
+        Ok(_) => tracing::info!(
+            "WebSocket connection closed for document {}",
+            session.doc_id
+        ),
         Err(e) => tracing::warn!(
             "WebSocket connection error for document {}: {}",
             session.doc_id,
