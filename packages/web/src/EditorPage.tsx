@@ -180,8 +180,9 @@ function EditorPageInner({
       if (status === 'disconnected') {
         try {
           const newToken = await getWsToken();
-          (provider as unknown as { url: string }).url =
-            `${provider.url.split('?')[0]}?token=${encodeURIComponent(newToken)}`;
+          // Update the params object so the next reconnection URL includes the
+          // fresh token. y-websocket reads `this.params` in its `url` getter.
+          (provider as unknown as { params: Record<string, string> }).params.token = newToken;
         } catch {
           // If we can't get a new token, y-websocket will retry and fail
         }

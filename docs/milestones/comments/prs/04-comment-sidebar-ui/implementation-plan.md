@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Comments Table & CRUD API) is merged — REST endpoints work
-- [ ] PR 3 (WebSocket Comment Events) is merged — real-time events are broadcast
+- [x] PR 1 (Comments Table & CRUD API) is merged — REST endpoints work
+- [x] PR 3 (WebSocket Comment Events) is merged — real-time events are broadcast
 
 ## Steps
 
@@ -313,16 +313,16 @@ function handleAddComment() {
 
 ### 7. Manual verification
 
-- [ ] Start the full dev stack: `pnpm dev`
-- [ ] Create a document and add several paragraphs of content.
-- [ ] Select text and verify the "Add Comment" button appears.
-- [ ] Create a comment — verify it appears in the sidebar with the correct author and timestamp.
-- [ ] Verify the anchor text is highlighted in the editor.
-- [ ] Click the highlight — verify the sidebar scrolls to the comment.
-- [ ] Click a comment in the sidebar — verify the editor scrolls to the anchor.
-- [ ] Open the same document in a second tab. Create a comment in tab 1 — verify it appears in tab 2's sidebar in real time.
-- [ ] Test with a Read-role user — verify they can see comments but the "Add Comment" button and action buttons are hidden.
-- [ ] Close and reopen the sidebar — verify comments persist (loaded via REST).
+- [x] Start the full dev stack: `pnpm dev`
+- [x] Create a document and add several paragraphs of content.
+- [x] Select text and verify the "Add Comment" button appears.
+- [x] Create a comment — verify it appears in the sidebar with the correct author and timestamp.
+- [x] Verify the anchor text is highlighted in the editor.
+- [x] Click the highlight — verify the sidebar scrolls to the comment.
+- [x] Click a comment in the sidebar — verify the editor scrolls to the anchor.
+- [x] Open the same document in a second tab. Create a comment in tab 1 — verify it appears in tab 2's sidebar in real time.
+- [x] Test with a Read-role user — verify they can see comments but the "Add Comment" button and action buttons are hidden.
+- [x] Close and reopen the sidebar — verify comments persist (loaded via REST).
 
 ### 8. Build and format check
 
@@ -331,16 +331,16 @@ function handleAddComment() {
 
 ## Verification
 
-- [ ] Comment sidebar opens and closes via header button
-- [ ] Comments load from REST on sidebar open
-- [ ] Comment creation from text selection works end-to-end
-- [ ] Anchor highlights appear on commented text ranges
-- [ ] Clicking a highlight activates the corresponding comment in the sidebar
-- [ ] Clicking a comment scrolls the editor to the anchor
-- [ ] WebSocket events update the sidebar in real time (new comments appear without refresh)
-- [ ] Read-role users see comments but cannot create/reply/resolve
-- [ ] Comment/Edit users see all action buttons
-- [ ] Sidebar resizes the editor layout cleanly
+- [x] Comment sidebar opens and closes via header button
+- [x] Comments load from REST on sidebar open
+- [x] Comment creation from text selection works end-to-end
+- [x] Anchor highlights appear on commented text ranges
+- [x] Clicking a highlight activates the corresponding comment in the sidebar
+- [x] Clicking a comment scrolls the editor to the anchor
+- [x] WebSocket events update the sidebar in real time (new comments appear without refresh)
+- [x] Read-role users see comments but cannot create/reply/resolve
+- [x] Comment/Edit users see all action buttons
+- [x] Sidebar resizes the editor layout cleanly
 
 ## Files Modified
 
