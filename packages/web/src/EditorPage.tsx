@@ -168,29 +168,29 @@ function EditorPageInner({
     }
   }
 
-  // Handle ws-token expiry (close code 4401)
+  // Handle ws-token expiry: the ws-token has a short TTL (30s) and is only
+  // used for the initial WebSocket handshake. When y-websocket reconnects
+  // (after a disconnect), it reuses the same URL — which contains the expired
+  // token. We listen for 'status' events on the provider and refresh the
+  // token in the URL before each reconnection attempt.
   useEffect(() => {
     if (!provider) return;
 
-    const ws = provider.ws;
-    if (!ws) return;
-
-    const handleClose = async (event: CloseEvent) => {
-      if (event.code === 4401) {
+    const onStatus = async ({ status }: { status: string }) => {
+      if (status === 'disconnected') {
         try {
           const newToken = await getWsToken();
           (provider as unknown as { url: string }).url =
             `${provider.url.split('?')[0]}?token=${encodeURIComponent(newToken)}`;
-          provider.connect();
         } catch {
-          // If we can't get a new token, the user will see disconnected status
+          // If we can't get a new token, y-websocket will retry and fail
         }
       }
     };
 
-    ws.addEventListener('close', handleClose);
+    provider.on('status', onStatus);
     return () => {
-      ws.removeEventListener('close', handleClose);
+      provider.off('status', onStatus);
     };
   }, [provider, getWsToken]);
 

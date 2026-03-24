@@ -26,77 +26,45 @@ export function useComments(docId: string, wsProvider: WebsocketProvider | null)
       .finally(() => setLoading(false));
   }, [docId]);
 
-  // WebSocket event listener — listen directly on the raw WebSocket for
-  // custom comment messages (tag=100). This is more reliable than hooking
-  // into y-websocket's internal messageHandlers array, which can be reset
-  // on reconnection. The provider may reconnect (creating a new underlying
-  // WebSocket), so we re-attach on each 'status' change.
+  // WebSocket event listener — register a handler on y-websocket's
+  // messageHandlers array to decode custom comment messages (tag=100).
+  // The provider's messageHandlers array is created once at construction
+  // via .slice() and persists across reconnections.
   useEffect(() => {
     if (!wsProvider) return;
 
-    const onEvent = (event: { type: string; comment: Comment }) => {
-      const comment = event.comment;
+    const handlers = (wsProvider as unknown as { messageHandlers: unknown[] }).messageHandlers;
+    handlers[COMMENT_EVENT_TAG] = (
+      _encoder: unknown,
+      decoder: { arr: Uint8Array; pos: number },
+    ) => {
+      try {
+        const buf = decoding.readVarUint8Array(decoder);
+        const json = new TextDecoder().decode(buf);
+        const event = JSON.parse(json);
+        const comment: Comment = event.comment;
 
-      setComments((prev) => {
-        switch (event.type) {
-          case 'created':
-          case 'replied':
-            if (prev.some((c) => c.id === comment.id)) return prev;
-            return [...prev, comment];
-          case 'updated':
-          case 'resolved':
-          case 'unresolved':
-            return prev.map((c) => (c.id === comment.id ? comment : c));
-          default:
-            return prev;
-        }
-      });
+        setComments((prev) => {
+          switch (event.type) {
+            case 'created':
+            case 'replied':
+              if (prev.some((c) => c.id === comment.id)) return prev;
+              return [...prev, comment];
+            case 'updated':
+            case 'resolved':
+            case 'unresolved':
+              return prev.map((c) => (c.id === comment.id ? comment : c));
+            default:
+              return prev;
+          }
+        });
+      } catch (e) {
+        console.error('[useComments] Failed to decode comment event:', e);
+      }
     };
 
-    let currentWs: WebSocket | null = null;
-    let currentHandler: ((ev: MessageEvent) => void) | null = null;
-
-    function attachListener() {
-      detachListener();
-      const ws = (wsProvider as unknown as { ws: WebSocket | null }).ws;
-      if (!ws) return;
-      currentWs = ws;
-      currentHandler = (ev: MessageEvent) => {
-        try {
-          const data = new Uint8Array(ev.data as ArrayBuffer);
-          if (data.length < 2) return;
-          // First byte: varint message tag. For tag 100 (0x64), MSB is 0,
-          // so it's a single-byte varint identical to the raw byte value.
-          if (data[0] !== COMMENT_EVENT_TAG) return;
-          const decoder = decoding.createDecoder(data);
-          decoding.readVarUint(decoder); // consume the tag
-          const buf = decoding.readVarUint8Array(decoder);
-          const json = new TextDecoder().decode(buf);
-          const event = JSON.parse(json);
-          onEvent(event);
-        } catch {
-          // Not a comment event or malformed — ignore
-        }
-      };
-      ws.addEventListener('message', currentHandler);
-    }
-
-    function detachListener() {
-      if (currentWs && currentHandler) {
-        currentWs.removeEventListener('message', currentHandler);
-      }
-      currentWs = null;
-      currentHandler = null;
-    }
-
-    // Attach now and re-attach whenever the provider reconnects
-    attachListener();
-    const onStatus = () => attachListener();
-    wsProvider.on('status', onStatus);
-
     return () => {
-      detachListener();
-      wsProvider.off('status', onStatus);
+      delete handlers[COMMENT_EVENT_TAG];
     };
   }, [wsProvider]);
 
