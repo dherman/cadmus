@@ -351,24 +351,30 @@ pub async fn push_content(
         })));
     }
 
-    // 9. Apply changes to the live document (full replace — PR 3 upgrades to Step translation)
-    {
+    // 9. Apply changes via Step translation (surgical CRDT operations)
+    let step_result = {
         let awareness = session.awareness.read().await;
         let doc = awareness.doc();
-        super::yrs_json::replace_yrs_content(doc, &new_doc)
-            .map_err(|e| AppError::Internal(format!("Failed to apply content: {}", e)))?;
-    }
+        super::step_translator::StepTranslator::apply_steps(doc, &steps)
+    };
 
     // 10. Trigger flush and get new version
     let new_version = session
         .trigger_flush(&state.db, &state.storage)
         .await?;
 
-    Ok(Json(serde_json::json!({
+    let mut response = serde_json::json!({
         "version": new_version,
         "status": "applied",
         "changes_summary": summary,
-    })))
+    });
+
+    if step_result.steps_failed > 0 {
+        response["steps_failed"] = serde_json::json!(step_result.steps_failed);
+        response["steps_applied"] = serde_json::json!(step_result.steps_applied);
+    }
+
+    Ok(Json(response))
 }
 
 // --- Push content utilities ---

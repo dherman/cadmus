@@ -708,6 +708,7 @@ dependencies = [
  "sha2",
  "similar",
  "sqlx",
+ "thiserror 1.0.69",
  "tokio",
  "tokio-tungstenite 0.26.2",
  "tower",

@@ -52,7 +52,7 @@ pub fn empty_doc_json() -> Value {
 }
 
 /// Extract a single XmlNode into ProseMirror JSON.
-fn extract_node<T: ReadTxn>(txn: &T, node: &XmlNode) -> Value {
+pub(super) fn extract_node<T: ReadTxn>(txn: &T, node: &XmlNode) -> Value {
     match node {
         XmlNode::Element(el) => extract_element(txn, el),
         XmlNode::Text(text) => extract_text_node(txn, text),
@@ -426,7 +426,7 @@ fn build_yrs_element_child(
 }
 
 /// Convert ProseMirror marks array to Yrs text formatting attributes.
-fn marks_to_attrs(marks: &[Value]) -> Attrs {
+pub(super) fn marks_to_attrs(marks: &[Value]) -> Attrs {
     let mut attrs = std::collections::HashMap::new();
     for mark in marks {
         if let Some(mark_type) = mark.get("type").and_then(|t| t.as_str()) {
@@ -448,7 +448,7 @@ fn marks_to_attrs(marks: &[Value]) -> Attrs {
 }
 
 /// Convert serde_json Value to Yrs Any.
-fn json_to_any(value: &Value) -> Any {
+pub(super) fn json_to_any(value: &Value) -> Any {
     match value {
         Value::Null => Any::Null,
         Value::Bool(b) => Any::Bool(*b),
