@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-- [ ] Milestone 4 (Node Sidecar and Markdown Export) is merged
+- [x] Milestone 4 (Node Sidecar and Markdown Export) is merged
 
 ## Steps
 
 ### 1. Create the comments migration
 
-- [ ] Create `packages/server/migrations/20260312000003_comments.sql`:
+- [x] Create `packages/server/migrations/20260312000003_comments.sql`:
 
 ```sql
 CREATE TABLE comments (
@@ -29,11 +29,11 @@ CREATE INDEX idx_comments_parent_id ON comments(parent_id);
 CREATE INDEX idx_comments_document_status ON comments(document_id, status);
 ```
 
-- [ ] Start the dev database (`pnpm dev:infra`) and verify the migration runs on server startup.
+- [x] Start the dev database (`pnpm dev:infra`) and verify the migration runs on server startup.
 
 ### 2. Add comment data structures
 
-- [ ] Create `packages/server/src/documents/comments.rs` with:
+- [x] Create `packages/server/src/documents/comments.rs` with:
 
 ```rust
 use chrono::{DateTime, Utc};
@@ -92,11 +92,11 @@ pub struct EditCommentRequest {
 }
 ```
 
-- [ ] Add `pub mod comments;` to `packages/server/src/documents/mod.rs`.
+- [x] Add `pub mod comments;` to `packages/server/src/documents/mod.rs`.
 
 ### 3. Add database query methods
 
-- [ ] Add to `packages/server/src/db.rs` (or a new `db/comments.rs` if the file is getting large):
+- [x] Add to `packages/server/src/db.rs` (or a new `db/comments.rs` if the file is getting large):
 
 ```rust
 // Struct for the joined query result
@@ -130,7 +130,7 @@ Implement these query functions:
 
 ### 4. Implement comment REST handlers
 
-- [ ] In `packages/server/src/documents/api.rs`, replace the stub `list_comments` and `create_comment` handlers with real implementations and add the new handlers:
+- [x] In `packages/server/src/documents/api.rs`, replace the stub `list_comments` and `create_comment` handlers with real implementations and add the new handlers:
 
 **`list_comments`** — extract `document_id` from path, optional `status` query param, check Read permission, call `db::list_comments`, map to `CommentResponse` vec.
 
@@ -146,7 +146,7 @@ Implement these query functions:
 
 ### 5. Update the router
 
-- [ ] In `packages/server/src/lib.rs`, replace the existing stub comment routes with:
+- [x] In `packages/server/src/lib.rs`, replace the existing stub comment routes with:
 
 ```rust
 .route("/api/docs/{id}/comments", get(list_comments).post(create_comment))
@@ -158,7 +158,7 @@ Implement these query functions:
 
 ### 6. Add frontend API functions
 
-- [ ] Add to `packages/web/src/api.ts`:
+- [x] Add to `packages/web/src/api.ts`:
 
 ```typescript
 export interface Comment {
@@ -258,9 +258,9 @@ export async function unresolveComment(docId: string, commentId: string): Promis
 
 ### 7. Test the endpoints
 
-- [ ] Start the full dev stack: `pnpm dev`
-- [ ] Register two users and create a document.
-- [ ] Test with curl or the API directly:
+- [x] Start the full dev stack: `pnpm dev`
+- [x] Register two users and create a document.
+- [x] Test with curl or the API directly:
 
 ```bash
 # Create a comment
@@ -290,33 +290,33 @@ curl -X PUT http://localhost:8080/api/docs/{id}/comments/{cid} \
   -d '{"body": "Updated comment text"}'
 ```
 
-- [ ] Verify permission enforcement: a Read-role user gets 403 on create/reply/resolve.
-- [ ] Verify author enforcement: editing someone else's comment returns 403.
-- [ ] Verify threading rules: replying to a reply returns 400.
+- [x] Verify permission enforcement: a Read-role user gets 403 on create/reply/resolve.
+- [x] Verify author enforcement: editing someone else's comment returns 403.
+- [x] Verify threading rules: replying to a reply returns 400.
 
 ### 8. Build and format check
 
-- [ ] Run `cargo build` in `packages/server/` — compiles without errors.
-- [ ] Run `cargo test` in `packages/server/` — all tests pass.
-- [ ] Run `pnpm -F @cadmus/web build` — TypeScript compiles (new API types are valid).
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `cargo build` in `packages/server/` — compiles without errors.
+- [x] Run `cargo test` in `packages/server/` — all tests pass.
+- [x] Run `pnpm -F @cadmus/web build` — TypeScript compiles (new API types are valid).
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] Migration creates the `comments` table with correct schema
-- [ ] `GET /api/docs/{id}/comments` returns comments with author info
-- [ ] `GET /api/docs/{id}/comments?status=open` filters correctly
-- [ ] `POST /api/docs/{id}/comments` creates a top-level comment
-- [ ] `POST /api/docs/{id}/comments/{cid}/replies` creates a threaded reply
-- [ ] Replying to a reply returns 400
-- [ ] `PUT /api/docs/{id}/comments/{cid}` updates body (author only)
-- [ ] Editing another user's comment returns 403
-- [ ] `POST /api/docs/{id}/comments/{cid}/resolve` sets status to resolved
-- [ ] `POST /api/docs/{id}/comments/{cid}/unresolve` sets status back to open
-- [ ] Resolve/unresolve on a reply returns 400
-- [ ] Read-role users can list but not create/reply/resolve
-- [ ] Comment/Edit-role users can create, reply, resolve
-- [ ] Empty body returns 400
+- [x] Migration creates the `comments` table with correct schema
+- [x] `GET /api/docs/{id}/comments` returns comments with author info
+- [x] `GET /api/docs/{id}/comments?status=open` filters correctly
+- [x] `POST /api/docs/{id}/comments` creates a top-level comment
+- [x] `POST /api/docs/{id}/comments/{cid}/replies` creates a threaded reply
+- [x] Replying to a reply returns 400
+- [x] `PUT /api/docs/{id}/comments/{cid}` updates body (author only)
+- [x] Editing another user's comment returns 403
+- [x] `POST /api/docs/{id}/comments/{cid}/resolve` sets status to resolved
+- [x] `POST /api/docs/{id}/comments/{cid}/unresolve` sets status back to open
+- [x] Resolve/unresolve on a reply returns 400
+- [x] Read-role users can list but not create/reply/resolve
+- [x] Comment/Edit-role users can create, reply, resolve
+- [x] Empty body returns 400
 
 ## Files Modified
 

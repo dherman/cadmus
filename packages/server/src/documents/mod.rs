@@ -1,4 +1,5 @@
 pub mod api;
+pub mod comments;
 pub mod permissions;
 pub mod storage;
 pub mod yrs_json;

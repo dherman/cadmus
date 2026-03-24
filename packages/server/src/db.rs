@@ -42,6 +42,23 @@ pub struct PermissionWithUser {
     pub role: String,
 }
 
+/// A comment row joined with author info.
+#[derive(Debug, sqlx::FromRow)]
+pub struct CommentWithAuthor {
+    pub id: Uuid,
+    pub document_id: Uuid,
+    pub author_id: Uuid,
+    pub parent_id: Option<Uuid>,
+    pub anchor_start: Option<Vec<u8>>,
+    pub anchor_end: Option<Vec<u8>>,
+    pub body: String,
+    pub status: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub author_display_name: String,
+    pub author_email: String,
+}
+
 /// A row from the `users` table.
 #[derive(Debug, sqlx::FromRow)]
 pub struct UserRow {
@@ -342,6 +359,140 @@ impl Database {
         .bind(user_id)
         .bind(document_id)
         .fetch_optional(&self.pool)
+        .await
+    }
+
+    // ── Comment queries ──
+
+    pub async fn list_comments(
+        &self,
+        document_id: Uuid,
+        status_filter: Option<&str>,
+    ) -> Result<Vec<CommentWithAuthor>, sqlx::Error> {
+        match status_filter {
+            Some(status) => {
+                sqlx::query_as::<_, CommentWithAuthor>(
+                    r#"SELECT c.id, c.document_id, c.author_id, c.parent_id,
+                              c.anchor_start, c.anchor_end, c.body, c.status,
+                              c.created_at, c.updated_at,
+                              u.display_name AS author_display_name,
+                              u.email AS author_email
+                       FROM comments c
+                       JOIN users u ON c.author_id = u.id
+                       WHERE c.document_id = $1 AND c.status = $2
+                       ORDER BY c.created_at ASC"#,
+                )
+                .bind(document_id)
+                .bind(status)
+                .fetch_all(&self.pool)
+                .await
+            }
+            None => {
+                sqlx::query_as::<_, CommentWithAuthor>(
+                    r#"SELECT c.id, c.document_id, c.author_id, c.parent_id,
+                              c.anchor_start, c.anchor_end, c.body, c.status,
+                              c.created_at, c.updated_at,
+                              u.display_name AS author_display_name,
+                              u.email AS author_email
+                       FROM comments c
+                       JOIN users u ON c.author_id = u.id
+                       WHERE c.document_id = $1
+                       ORDER BY c.created_at ASC"#,
+                )
+                .bind(document_id)
+                .fetch_all(&self.pool)
+                .await
+            }
+        }
+    }
+
+    pub async fn create_comment(
+        &self,
+        document_id: Uuid,
+        author_id: Uuid,
+        body: &str,
+        anchor_start: Option<&[u8]>,
+        anchor_end: Option<&[u8]>,
+    ) -> Result<crate::documents::comments::CommentRow, sqlx::Error> {
+        sqlx::query_as::<_, crate::documents::comments::CommentRow>(
+            r#"INSERT INTO comments (document_id, author_id, body, anchor_start, anchor_end)
+               VALUES ($1, $2, $3, $4, $5)
+               RETURNING id, document_id, author_id, parent_id, anchor_start, anchor_end,
+                         body, status, created_at, updated_at"#,
+        )
+        .bind(document_id)
+        .bind(author_id)
+        .bind(body)
+        .bind(anchor_start)
+        .bind(anchor_end)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    pub async fn create_reply(
+        &self,
+        document_id: Uuid,
+        author_id: Uuid,
+        parent_id: Uuid,
+        body: &str,
+    ) -> Result<crate::documents::comments::CommentRow, sqlx::Error> {
+        sqlx::query_as::<_, crate::documents::comments::CommentRow>(
+            r#"INSERT INTO comments (document_id, author_id, parent_id, body)
+               VALUES ($1, $2, $3, $4)
+               RETURNING id, document_id, author_id, parent_id, anchor_start, anchor_end,
+                         body, status, created_at, updated_at"#,
+        )
+        .bind(document_id)
+        .bind(author_id)
+        .bind(parent_id)
+        .bind(body)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    pub async fn get_comment(
+        &self,
+        comment_id: Uuid,
+    ) -> Result<Option<crate::documents::comments::CommentRow>, sqlx::Error> {
+        sqlx::query_as::<_, crate::documents::comments::CommentRow>(
+            r#"SELECT id, document_id, author_id, parent_id, anchor_start, anchor_end,
+                      body, status, created_at, updated_at
+               FROM comments WHERE id = $1"#,
+        )
+        .bind(comment_id)
+        .fetch_optional(&self.pool)
+        .await
+    }
+
+    pub async fn update_comment_body(
+        &self,
+        comment_id: Uuid,
+        body: &str,
+    ) -> Result<crate::documents::comments::CommentRow, sqlx::Error> {
+        sqlx::query_as::<_, crate::documents::comments::CommentRow>(
+            r#"UPDATE comments SET body = $2, updated_at = NOW() WHERE id = $1
+               RETURNING id, document_id, author_id, parent_id, anchor_start, anchor_end,
+                         body, status, created_at, updated_at"#,
+        )
+        .bind(comment_id)
+        .bind(body)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    pub async fn update_comment_status(
+        &self,
+        comment_id: Uuid,
+        status: &str,
+    ) -> Result<crate::documents::comments::CommentRow, sqlx::Error> {
+        sqlx::query_as::<_, crate::documents::comments::CommentRow>(
+            r#"UPDATE comments SET status = $2, updated_at = NOW() WHERE id = $1
+               RETURNING id, document_id, author_id, parent_id, anchor_start, anchor_end,
+                         body, status, created_at, updated_at"#,
+        )
+        .bind(comment_id)
+        .bind(status)
+        .fetch_one(&self.pool)
         .await
     }
 }
