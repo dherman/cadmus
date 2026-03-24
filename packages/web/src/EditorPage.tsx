@@ -146,10 +146,15 @@ function EditorPageInner({
     replyToComment: handleReply,
     resolveComment: handleResolve,
     unresolveComment: handleUnresolve,
+    editComment: handleEditComment,
   } = useComments(docId, provider);
 
   const isEditable = doc.role === 'edit';
   const canComment = doc.role === 'comment' || doc.role === 'edit';
+  const currentUserId = user?.id ?? '';
+  const openThreadCount = comments.filter(
+    (c) => c.parent_id === null && c.status === 'open',
+  ).length;
 
   async function handleExport() {
     setExporting(true);
@@ -195,6 +200,18 @@ function EditorPageInner({
     };
   }, [provider, getWsToken]);
 
+  // Cmd+Shift+M / Ctrl+Shift+M toggles sidebar
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'm') {
+        e.preventDefault();
+        setSidebarOpen((prev) => !prev);
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleAddComment = useCallback((from: number, to: number) => {
     setPendingAnchor({ from, to });
     setSidebarOpen(true);
@@ -234,7 +251,7 @@ function EditorPageInner({
           className={`btn-comments${sidebarOpen ? ' active' : ''}`}
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
-          Comments
+          Comments{openThreadCount > 0 ? ` (${openThreadCount})` : ''}
         </button>
         {exportError && <span className="export-error">{exportError}</span>}
       </header>
@@ -261,12 +278,14 @@ function EditorPageInner({
             onReply={handleReply}
             onResolve={handleResolve}
             onUnresolve={handleUnresolve}
+            onEdit={handleEditComment}
             activeCommentId={activeCommentId}
             onCommentClick={handleCommentClick}
             pendingAnchor={pendingAnchor}
             onCancelCreate={handleCancelCreate}
             onClose={() => setSidebarOpen(false)}
             canComment={canComment}
+            currentUserId={currentUserId}
           />
         )}
       </div>

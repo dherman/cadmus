@@ -39,6 +39,13 @@ export function Editor({
     [user],
   );
 
+  // Commenters need the editor to be "editable" so they can select text for the
+  // BubbleMenu, but they shouldn't be able to modify content. We set editable=true
+  // for commenters and rely on the Collaboration extension + server authority to
+  // prevent actual edits. A ProseMirror transaction filter blocks local edits for
+  // non-editors as an extra safeguard.
+  const proseMirrorEditable = editable || canComment;
+
   const editor = useEditor({
     extensions: [
       ...createExtensions({ disableHistory: true }),
@@ -49,8 +56,26 @@ export function Editor({
       }),
       CommentHighlightExtension,
     ],
-    editable,
+    editable: proseMirrorEditable,
   });
+
+  // Block DOM-level input for comment-only users. The editor is set to
+  // editable (so text selection and BubbleMenu work), but we prevent typing,
+  // pasting, and dropping by intercepting beforeinput/paste/drop events.
+  // Programmatic transactions (y-sync, plugin meta, selections) are unaffected.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || editable) return;
+    const dom = editor.view.dom;
+    const blockInput = (e: Event) => e.preventDefault();
+    dom.addEventListener('beforeinput', blockInput);
+    dom.addEventListener('paste', blockInput);
+    dom.addEventListener('drop', blockInput);
+    return () => {
+      dom.removeEventListener('beforeinput', blockInput);
+      dom.removeEventListener('paste', blockInput);
+      dom.removeEventListener('drop', blockInput);
+    };
+  }, [editor, editable]);
 
   // Push comment data into the plugin whenever comments or activeCommentId changes
   useEffect(() => {
@@ -93,6 +118,10 @@ export function Editor({
     <div className="editor-wrapper">
       {editable ? (
         <Toolbar editor={editor} />
+      ) : canComment ? (
+        <div className="read-only-banner">
+          Comment only — you can comment on this document but not edit it
+        </div>
       ) : (
         <div className="read-only-banner">
           Read only — you can view this document but not edit it
