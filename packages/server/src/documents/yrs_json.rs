@@ -1,8 +1,13 @@
 use serde_json::{json, Value};
+use std::sync::Arc;
 use yrs::types::text::Diff;
 use yrs::types::xml::{XmlFragment, XmlNode};
 use yrs::types::{Attrs, Value as YrsValue};
-use yrs::{Any, Doc, ReadTxn, Text, Transact, Xml, XmlElementRef, XmlTextRef};
+use yrs::updates::decoder::Decode;
+use yrs::{
+    Any, Doc, ReadTxn, Text, Transact, WriteTxn, Xml, XmlElementRef, XmlFragmentRef,
+    XmlTextRef,
+};
 
 /// Extract ProseMirror JSON from a Yrs document.
 ///
@@ -204,6 +209,280 @@ fn attrs_to_marks(attrs: &Attrs) -> Vec<Value> {
     }
 
     marks
+}
+
+/// Replace the entire content of a Yrs document with new ProseMirror JSON.
+///
+/// This is the interim strategy for PR 2: it clears the XmlFragment and rebuilds
+/// it from ProseMirror JSON. This works correctly for single-writer scenarios but
+/// doesn't preserve concurrent CRDT state. PR 3 upgrades to Step-based translation.
+pub fn replace_yrs_content(doc: &Doc, pm_json: &Value) -> Result<(), String> {
+    let mut txn = doc.transact_mut();
+    let fragment = txn.get_or_insert_xml_fragment("default");
+
+    // Clear existing content
+    let len = fragment.len(&txn);
+    if len > 0 {
+        fragment.remove_range(&mut txn, 0, len);
+    }
+
+    // Rebuild from ProseMirror JSON
+    if let Some(content) = pm_json.get("content").and_then(|c| c.as_array()) {
+        for (i, node) in content.iter().enumerate() {
+            build_yrs_node(&mut txn, &fragment, i as u32, node)?;
+        }
+    }
+
+    Ok(())
+}
+
+/// Build a Yrs XML node from ProseMirror JSON and insert it into a fragment.
+fn build_yrs_node(
+    txn: &mut yrs::TransactionMut,
+    parent: &XmlFragmentRef,
+    index: u32,
+    node: &Value,
+) -> Result<(), String> {
+    let node_type = node
+        .get("type")
+        .and_then(|t| t.as_str())
+        .ok_or_else(|| "Node missing type".to_string())?;
+
+    // Create the element
+    let element = parent.insert(
+        txn,
+        index,
+        yrs::types::xml::XmlElementPrelim::empty(node_type),
+    );
+
+    // Set attributes
+    if let Some(attrs) = node.get("attrs").and_then(|a| a.as_object()) {
+        for (key, value) in attrs {
+            let str_val = match value {
+                Value::String(s) => s.clone(),
+                Value::Number(n) => n.to_string(),
+                Value::Bool(b) => b.to_string(),
+                Value::Null => continue,
+                _ => serde_json::to_string(value).unwrap_or_default(),
+            };
+            element.insert_attribute(txn, key.as_str(), str_val);
+        }
+    }
+
+    // Process children
+    if let Some(content) = node.get("content").and_then(|c| c.as_array()) {
+        // Check if children are all text nodes (inline content)
+        let all_inline = content
+            .iter()
+            .all(|c| c.get("type").and_then(|t| t.as_str()) == Some("text"));
+
+        if all_inline && !content.is_empty() {
+            // Inline content: create a single XmlText with formatted chunks
+            let text = element.insert(
+                txn,
+                0,
+                yrs::types::xml::XmlTextPrelim::new(""),
+            );
+            let mut offset = 0;
+            for text_node in content {
+                let text_str = text_node
+                    .get("text")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("");
+                if text_str.is_empty() {
+                    continue;
+                }
+
+                let marks = text_node
+                    .get("marks")
+                    .and_then(|m| m.as_array());
+
+                if let Some(marks) = marks {
+                    let attrs = marks_to_attrs(marks);
+                    text.insert_with_attributes(txn, offset, text_str, attrs);
+                } else {
+                    text.insert(txn, offset, text_str);
+                }
+                offset += text_str.len() as u32;
+            }
+        } else {
+            // Block content: recursively build child elements
+            for (i, child) in content.iter().enumerate() {
+                let child_type = child.get("type").and_then(|t| t.as_str());
+                if child_type == Some("text") {
+                    // Mixed content — text node inside block parent
+                    let text = element.insert(
+                        txn,
+                        i as u32,
+                        yrs::types::xml::XmlTextPrelim::new(""),
+                    );
+                    let text_str = child
+                        .get("text")
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("");
+                    if !text_str.is_empty() {
+                        let marks = child.get("marks").and_then(|m| m.as_array());
+                        if let Some(marks) = marks {
+                            let attrs = marks_to_attrs(marks);
+                            text.insert_with_attributes(txn, 0, text_str, attrs);
+                        } else {
+                            text.insert(txn, 0, text_str);
+                        }
+                    }
+                } else {
+                    build_yrs_element_child(txn, &element, i as u32, child)?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Build a child element inside an XmlElement (recursive).
+fn build_yrs_element_child(
+    txn: &mut yrs::TransactionMut,
+    parent: &XmlElementRef,
+    index: u32,
+    node: &Value,
+) -> Result<(), String> {
+    let node_type = node
+        .get("type")
+        .and_then(|t| t.as_str())
+        .ok_or_else(|| "Node missing type".to_string())?;
+
+    if node_type == "text" {
+        // Text node — should be handled by caller, but handle gracefully
+        let text = parent.insert(
+            txn,
+            index,
+            yrs::types::xml::XmlTextPrelim::new(""),
+        );
+        let text_str = node.get("text").and_then(|t| t.as_str()).unwrap_or("");
+        if !text_str.is_empty() {
+            text.insert(txn, 0, text_str);
+        }
+        return Ok(());
+    }
+
+    let element = parent.insert(
+        txn,
+        index,
+        yrs::types::xml::XmlElementPrelim::empty(node_type),
+    );
+
+    // Set attributes
+    if let Some(attrs) = node.get("attrs").and_then(|a| a.as_object()) {
+        for (key, value) in attrs {
+            let str_val = match value {
+                Value::String(s) => s.clone(),
+                Value::Number(n) => n.to_string(),
+                Value::Bool(b) => b.to_string(),
+                Value::Null => continue,
+                _ => serde_json::to_string(value).unwrap_or_default(),
+            };
+            element.insert_attribute(txn, key.as_str(), str_val);
+        }
+    }
+
+    // Process children
+    if let Some(content) = node.get("content").and_then(|c| c.as_array()) {
+        let all_inline = content
+            .iter()
+            .all(|c| c.get("type").and_then(|t| t.as_str()) == Some("text"));
+
+        if all_inline && !content.is_empty() {
+            let text = element.insert(
+                txn,
+                0,
+                yrs::types::xml::XmlTextPrelim::new(""),
+            );
+            let mut offset = 0;
+            for text_node in content {
+                let text_str = text_node
+                    .get("text")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("");
+                if text_str.is_empty() {
+                    continue;
+                }
+                let marks = text_node.get("marks").and_then(|m| m.as_array());
+                if let Some(marks) = marks {
+                    let attrs = marks_to_attrs(marks);
+                    text.insert_with_attributes(txn, offset, text_str, attrs);
+                } else {
+                    text.insert(txn, offset, text_str);
+                }
+                offset += text_str.len() as u32;
+            }
+        } else {
+            for (i, child) in content.iter().enumerate() {
+                build_yrs_element_child(txn, &element, i as u32, child)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Convert ProseMirror marks array to Yrs text formatting attributes.
+fn marks_to_attrs(marks: &[Value]) -> Attrs {
+    let mut attrs = std::collections::HashMap::new();
+    for mark in marks {
+        if let Some(mark_type) = mark.get("type").and_then(|t| t.as_str()) {
+            let key: Arc<str> = Arc::from(mark_type);
+            if let Some(mark_attrs) = mark.get("attrs").and_then(|a| a.as_object()) {
+                // Complex mark with attributes (e.g., link with href)
+                let map: std::collections::HashMap<String, Any> = mark_attrs
+                    .iter()
+                    .map(|(k, v)| (k.clone(), json_to_any(v)))
+                    .collect();
+                attrs.insert(key, Any::Map(Arc::new(map)));
+            } else {
+                // Simple boolean mark (e.g., bold, italic)
+                attrs.insert(key, Any::Bool(true));
+            }
+        }
+    }
+    attrs
+}
+
+/// Convert serde_json Value to Yrs Any.
+fn json_to_any(value: &Value) -> Any {
+    match value {
+        Value::Null => Any::Null,
+        Value::Bool(b) => Any::Bool(*b),
+        Value::Number(n) => {
+            if let Some(f) = n.as_f64() {
+                Any::Number(f)
+            } else {
+                Any::Null
+            }
+        }
+        Value::String(s) => Any::String(Arc::from(s.as_str())),
+        Value::Array(arr) => {
+            let items: Vec<Any> = arr.iter().map(json_to_any).collect();
+            Any::Array(items.into())
+        }
+        Value::Object(obj) => {
+            let map: std::collections::HashMap<String, Any> =
+                obj.iter().map(|(k, v)| (k.clone(), json_to_any(v))).collect();
+            Any::Map(Arc::new(map))
+        }
+    }
+}
+
+/// Extract ProseMirror JSON from a Yrs document state (encoded as v1 update bytes).
+/// Used to load base version snapshots for diffing.
+pub fn extract_from_snapshot(snapshot_data: &[u8]) -> Result<Value, String> {
+    let doc = Doc::new();
+    let update = yrs::Update::decode_v1(snapshot_data)
+        .map_err(|e| format!("Failed to decode snapshot: {}", e))?;
+    doc.transact_mut().apply_update(update);
+    // A snapshot from a brand-new document may not have a "default" fragment yet
+    // (it only gets created when TipTap connects via WebSocket), so fall back to
+    // the empty doc JSON rather than erroring.
+    Ok(extract_prosemirror_json(&doc).unwrap_or_else(|_| empty_doc_json()))
 }
 
 /// Convert a Yrs Any value to serde_json Value.
