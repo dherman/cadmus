@@ -22,6 +22,8 @@ pub struct CommentResponse {
     pub document_id: Uuid,
     pub author: CommentAuthor,
     pub parent_id: Option<Uuid>,
+    pub anchor_from: Option<u32>,
+    pub anchor_to: Option<u32>,
     pub body: String,
     pub status: String,
     pub created_at: DateTime<Utc>,

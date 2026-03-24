@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Comments Table & CRUD API) is merged
+- [x] PR 1 (Comments Table & CRUD API) is merged
 
 ## Steps
 
 ### 1. Implement ProseMirror ↔ Yrs position mapping
 
-- [ ] Add position mapping functions to `packages/server/src/documents/comments.rs`:
+- [x] Add position mapping functions to `packages/server/src/documents/anchors.rs`:
 
 ```rust
 use yrs::types::xml::XmlFragmentRef;
@@ -39,11 +39,11 @@ pub fn relative_position_to_pm_offset(
 }
 ```
 
-- [ ] The ProseMirror position model counts: +1 for each character of text, +1 for each node open tag, +1 for each node close tag (except the root doc). The Yrs XML model uses a similar but not identical counting. The mapping function must account for the differences — particularly around XmlElement boundaries and XmlText nodes.
+- [x] The ProseMirror position model counts: +1 for each character of text, +1 for each node open tag, +1 for each node close tag (except the root doc). The Yrs XML model uses a similar but not identical counting. The mapping function must account for the differences — particularly around XmlElement boundaries and XmlText nodes.
 
 ### 2. Update the create_comment handler
 
-- [ ] Modify `create_comment` in `packages/server/src/documents/api.rs`:
+- [x] Modify `create_comment` in `packages/server/src/documents/api.rs`:
 
 ```rust
 async fn create_comment(
@@ -90,7 +90,7 @@ async fn create_comment(
 
 ### 3. Update the list_comments handler
 
-- [ ] Modify `list_comments` in `packages/server/src/documents/api.rs` to resolve anchors:
+- [x] Modify `list_comments` in `packages/server/src/documents/api.rs` to resolve anchors:
 
 ```rust
 async fn list_comments(
@@ -146,7 +146,7 @@ async fn list_comments(
 
 ### 4. Add anchor fields to the frontend Comment type
 
-- [ ] Update the `Comment` interface in `packages/web/src/api.ts`:
+- [x] Update the `Comment` interface in `packages/web/src/api.ts`:
 
 ```typescript
 export interface Comment {
@@ -163,11 +163,11 @@ export interface Comment {
 }
 ```
 
-- [ ] Update `createComment` to pass `anchor_from` and `anchor_to` in the request body (already done in PR 1, verify it's wired correctly).
+- [x] Update `createComment` to pass `anchor_from` and `anchor_to` in the request body (already done in PR 1, verified).
 
 ### 5. Write tests for position mapping
 
-- [ ] Add unit tests for `pm_offset_to_relative_position` and `relative_position_to_pm_offset`:
+- [x] Add unit tests for `pm_offset_to_sticky_bytes` and `sticky_bytes_to_pm_offset`:
 
 ```rust
 #[cfg(test)]
@@ -205,30 +205,32 @@ mod tests {
 
 ### 6. Integration test: anchor survives concurrent edit
 
-- [ ] Manually test: open a document in two tabs, create a comment anchored to a word in the second paragraph. In the first tab, insert a new paragraph above. Refresh the second tab and verify the comment's anchor still points to the correct word.
+- [ ] Manually test: open a document in two tabs, create a comment anchored to a word in the second paragraph. In the first tab, insert a new paragraph above. Refresh the second tab and verify the comment's anchor still points to the correct word. _(Deferred: requires comment UI, which lands in a later PR. The core logic is covered by `test_offset_survives_insert_before` in `anchors.rs`.)_
 
 ### 7. Build and verify
 
-- [ ] Run `cargo build` — compiles without errors.
-- [ ] Run `cargo test` — all tests pass, including new anchor mapping tests.
-- [ ] Run `pnpm -F @cadmus/web build` — TypeScript compiles.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `cargo build` — compiles without errors.
+- [x] Run `cargo test` — all tests pass, including new anchor mapping tests.
+- [x] Run `pnpm -F @cadmus/web build` — TypeScript compiles.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] Creating a comment with `anchor_from`/`anchor_to` stores binary RelativePositions in the database
-- [ ] Listing comments returns resolved absolute offsets
-- [ ] Resolved offsets match the original offsets when no edits have occurred
-- [ ] Resolved offsets track correctly after text is inserted before the anchor
-- [ ] Resolved offsets track correctly after text is inserted after the anchor
-- [ ] Deleting anchored text doesn't crash — returns nearest valid position or null
-- [ ] Comments without anchors (replies) return null for anchor fields
-- [ ] Position mapping handles nested content (lists, blockquotes) correctly
+- [x] Creating a comment with `anchor_from`/`anchor_to` stores binary StickyIndex blobs in the database
+- [x] Listing comments returns resolved absolute offsets
+- [x] Resolved offsets match the original offsets when no edits have occurred
+- [x] Resolved offsets track correctly after text is inserted before the anchor
+- [x] Resolved offsets track correctly after text is inserted after the anchor
+- [x] Deleting anchored text doesn't crash — returns nearest valid position or null
+- [x] Comments without anchors (replies) return null for anchor fields
+- [x] Position mapping handles nested content (lists, blockquotes) correctly
 
 ## Files Modified
 
-| File                                        | Change                                        |
-| ------------------------------------------- | --------------------------------------------- |
-| `packages/server/src/documents/comments.rs` | Add position mapping functions                |
-| `packages/server/src/documents/api.rs`      | Update create/list handlers with anchor logic |
-| `packages/web/src/api.ts`                   | Add `anchor_from`/`anchor_to` to Comment type |
+| File                                        | Change                                             |
+| ------------------------------------------- | -------------------------------------------------- |
+| `packages/server/src/documents/anchors.rs`  | New: ProseMirror ↔ Yrs position mapping functions  |
+| `packages/server/src/documents/mod.rs`      | Register `anchors` module                          |
+| `packages/server/src/documents/comments.rs` | Add `anchor_from`/`anchor_to` to `CommentResponse` |
+| `packages/server/src/documents/api.rs`      | Update create/list handlers with anchor logic      |
+| `packages/web/src/api.ts`                   | Add `anchor_from`/`anchor_to` to `Comment` type    |

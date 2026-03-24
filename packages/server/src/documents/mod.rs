@@ -1,3 +1,4 @@
+pub mod anchors;
 pub mod api;
 pub mod comments;
 pub mod permissions;

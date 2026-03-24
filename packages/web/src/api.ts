@@ -213,6 +213,8 @@ export interface Comment {
   document_id: string;
   author: CommentAuthor;
   parent_id: string | null;
+  anchor_from: number | null;
+  anchor_to: number | null;
   body: string;
   status: string;
   created_at: string;
