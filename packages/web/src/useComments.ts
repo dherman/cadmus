@@ -13,33 +13,6 @@ import * as decoding from 'lib0/decoding';
 
 const COMMENT_EVENT_TAG = 100;
 
-/**
- * Register a custom message handler on the y-websocket provider to receive
- * comment events broadcast by the server as y-sync Custom(100, json) messages.
- */
-function installCommentHandler(
-  provider: WebsocketProvider,
-  onEvent: (event: { type: string; comment: Comment }) => void,
-) {
-  // y-websocket reads the first var-uint from each binary message as
-  // `messageType` and dispatches to `provider.messageHandlers[messageType]`.
-  // The Rust server encodes comment events as Message::Custom(100, json_bytes),
-  // which on the wire is: [tag=100 (varint)] [length-prefixed json bytes].
-  // We register a handler at index 100 to decode the remaining payload.
-  const handlers = (provider as unknown as { messageHandlers: unknown[] }).messageHandlers;
-  handlers[COMMENT_EVENT_TAG] = (_encoder: unknown, decoder: { arr: Uint8Array; pos: number }) => {
-    const buf = decoding.readVarUint8Array(decoder);
-    const json = new TextDecoder().decode(buf);
-    const event = JSON.parse(json);
-    onEvent(event);
-  };
-}
-
-function uninstallCommentHandler(provider: WebsocketProvider) {
-  const handlers = (provider as unknown as { messageHandlers: unknown[] }).messageHandlers;
-  delete handlers[COMMENT_EVENT_TAG];
-}
-
 export function useComments(docId: string, wsProvider: WebsocketProvider | null) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +26,11 @@ export function useComments(docId: string, wsProvider: WebsocketProvider | null)
       .finally(() => setLoading(false));
   }, [docId]);
 
-  // WebSocket event listener
+  // WebSocket event listener — listen directly on the raw WebSocket for
+  // custom comment messages (tag=100). This is more reliable than hooking
+  // into y-websocket's internal messageHandlers array, which can be reset
+  // on reconnection. The provider may reconnect (creating a new underlying
+  // WebSocket), so we re-attach on each 'status' change.
   useEffect(() => {
     if (!wsProvider) return;
 
@@ -64,7 +41,6 @@ export function useComments(docId: string, wsProvider: WebsocketProvider | null)
         switch (event.type) {
           case 'created':
           case 'replied':
-            // Add if not already present (dedup with optimistic update)
             if (prev.some((c) => c.id === comment.id)) return prev;
             return [...prev, comment];
           case 'updated':
@@ -77,9 +53,50 @@ export function useComments(docId: string, wsProvider: WebsocketProvider | null)
       });
     };
 
-    installCommentHandler(wsProvider, onEvent);
+    let currentWs: WebSocket | null = null;
+    let currentHandler: ((ev: MessageEvent) => void) | null = null;
+
+    function attachListener() {
+      detachListener();
+      const ws = (wsProvider as unknown as { ws: WebSocket | null }).ws;
+      if (!ws) return;
+      currentWs = ws;
+      currentHandler = (ev: MessageEvent) => {
+        try {
+          const data = new Uint8Array(ev.data as ArrayBuffer);
+          if (data.length < 2) return;
+          // First byte: varint message tag. For tag 100 (0x64), MSB is 0,
+          // so it's a single-byte varint identical to the raw byte value.
+          if (data[0] !== COMMENT_EVENT_TAG) return;
+          const decoder = decoding.createDecoder(data);
+          decoding.readVarUint(decoder); // consume the tag
+          const buf = decoding.readVarUint8Array(decoder);
+          const json = new TextDecoder().decode(buf);
+          const event = JSON.parse(json);
+          onEvent(event);
+        } catch {
+          // Not a comment event or malformed — ignore
+        }
+      };
+      ws.addEventListener('message', currentHandler);
+    }
+
+    function detachListener() {
+      if (currentWs && currentHandler) {
+        currentWs.removeEventListener('message', currentHandler);
+      }
+      currentWs = null;
+      currentHandler = null;
+    }
+
+    // Attach now and re-attach whenever the provider reconnects
+    attachListener();
+    const onStatus = () => attachListener();
+    wsProvider.on('status', onStatus);
+
     return () => {
-      uninstallCommentHandler(wsProvider);
+      detachListener();
+      wsProvider.off('status', onStatus);
     };
   }, [wsProvider]);
 
