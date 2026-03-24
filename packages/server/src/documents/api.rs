@@ -71,6 +71,11 @@ pub struct PushContentRequest {
 }
 
 #[derive(Deserialize)]
+pub struct PushContentQuery {
+    pub dry_run: Option<bool>,
+}
+
+#[derive(Deserialize)]
 pub struct UpdateDocumentRequest {
     pub title: Option<String>,
 }
@@ -230,6 +235,16 @@ pub async fn get_content(
         .get_or_load(id, &state.db, &state.storage)
         .await?;
 
+    // Ensure we have a version — if no flush has occurred yet, trigger one
+    let version = {
+        let v = session.current_version.read().await;
+        v.clone()
+    };
+    let version = match version {
+        Some(v) => v,
+        None => session.trigger_flush(&state.db, &state.storage).await?,
+    };
+
     // Extract ProseMirror JSON from the Yrs document
     let doc_json = {
         let awareness = session.awareness.read().await;
@@ -245,11 +260,13 @@ pub async fn get_content(
             })?;
 
             Ok(Json(serde_json::json!({
+                "version": version,
                 "format": "markdown",
                 "content": markdown
             })))
         }
         _ => Ok(Json(serde_json::json!({
+            "version": version,
             "format": "json",
             "content": doc_json
         }))),
@@ -258,16 +275,151 @@ pub async fn get_content(
 
 pub async fn push_content(
     auth: AuthUser,
-    State(_state): State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
-    Json(_body): Json<PushContentRequest>,
+    Query(params): Query<PushContentQuery>,
+    Json(body): Json<PushContentRequest>,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    // 1. Permission + scope checks
     require_scope(&auth.token_scopes, "docs:write")?;
     check_document_restriction(&auth.token_document_ids, id)?;
-    require_permission(&_state.db, auth.user_id, id, Permission::Edit).await?;
-    // TODO: Parse pushed markdown via sidecar, diff against base version,
-    // translate Steps to Yrs operations, apply to live document
-    Err(AppError::Internal("Not yet implemented".to_string()))
+    require_permission(&state.db, auth.user_id, id, Permission::Edit).await?;
+
+    // 2. Validate request
+    if body.format != "markdown" {
+        return Err(AppError::BadRequest(
+            "Unsupported format: only 'markdown' is supported".to_string(),
+        ));
+    }
+    if body.content.is_empty() {
+        return Err(AppError::BadRequest("Content cannot be empty".to_string()));
+    }
+    if body.base_version.is_empty() {
+        return Err(AppError::BadRequest(
+            "base_version is required".to_string(),
+        ));
+    }
+
+    // 3. Load the document session
+    let session = state
+        .document_sessions
+        .get_or_load(id, &state.db, &state.storage)
+        .await?;
+
+    // 4. Load base version snapshot and extract ProseMirror JSON
+    let base_snapshot = state
+        .storage
+        .load_version_snapshot(&body.base_version)
+        .await?
+        .ok_or_else(|| {
+            AppError::NotFound(format!("Version '{}' not found", body.base_version))
+        })?;
+    let base_doc = super::yrs_json::extract_from_snapshot(&base_snapshot)
+        .map_err(|e| AppError::Internal(format!("Failed to extract base version: {}", e)))?;
+
+    // 5. Parse pushed markdown via sidecar
+    let new_doc = state
+        .sidecar
+        .parse(body.content.clone(), 1)
+        .await
+        .map_err(|e| {
+            AppError::UnprocessableEntity(format!("Failed to parse markdown: {}", e))
+        })?;
+
+    // 6. Compute diff via sidecar
+    let steps = state
+        .sidecar
+        .diff(base_doc.clone(), new_doc.clone())
+        .await
+        .map_err(|e| AppError::BadGateway(format!("Diff service error: {}", e)))?;
+
+    // 7. Build change summary
+    let summary = compute_change_summary(&steps);
+
+    // 8. If dry run, generate markdown diff and return preview
+    if params.dry_run.unwrap_or(false) {
+        let base_markdown = state
+            .sidecar
+            .serialize(base_doc, 1)
+            .await
+            .map_err(|e| AppError::BadGateway(format!("Serialize service error: {}", e)))?;
+        let diff = generate_unified_diff(&base_markdown, &body.content);
+        return Ok(Json(serde_json::json!({
+            "status": "preview",
+            "diff": diff,
+            "changes_summary": summary,
+        })));
+    }
+
+    // 9. Apply changes to the live document (full replace — PR 3 upgrades to Step translation)
+    {
+        let awareness = session.awareness.read().await;
+        let doc = awareness.doc();
+        super::yrs_json::replace_yrs_content(doc, &new_doc)
+            .map_err(|e| AppError::Internal(format!("Failed to apply content: {}", e)))?;
+    }
+
+    // 10. Trigger flush and get new version
+    let new_version = session
+        .trigger_flush(&state.db, &state.storage)
+        .await?;
+
+    Ok(Json(serde_json::json!({
+        "version": new_version,
+        "status": "applied",
+        "changes_summary": summary,
+    })))
+}
+
+// --- Push content utilities ---
+
+/// Generate a unified diff between two markdown strings.
+fn generate_unified_diff(old: &str, new: &str) -> String {
+    use similar::TextDiff;
+
+    let diff = TextDiff::from_lines(old, new);
+    let mut output = String::new();
+
+    for hunk in diff.unified_diff().header("base", "pushed").iter_hunks() {
+        output.push_str(&hunk.to_string());
+    }
+
+    output
+}
+
+/// Compute a change summary from ProseMirror Steps.
+fn compute_change_summary(steps: &[serde_json::Value]) -> serde_json::Value {
+    let mut added = 0u64;
+    let mut removed = 0u64;
+    let mut modified = 0u64;
+
+    for step in steps {
+        match step.get("stepType").and_then(|s| s.as_str()) {
+            Some("replace") => {
+                let has_content = step.get("slice").is_some();
+                let from = step.get("from").and_then(|v| v.as_u64()).unwrap_or(0);
+                let to = step.get("to").and_then(|v| v.as_u64()).unwrap_or(0);
+                if from == to && has_content {
+                    added += 1;
+                } else if !has_content {
+                    removed += 1;
+                } else {
+                    modified += 1;
+                }
+            }
+            Some("addMark") | Some("removeMark") => {
+                modified += 1;
+            }
+            _ => {}
+        }
+    }
+
+    serde_json::json!({
+        "steps_applied": steps.len(),
+        "nodes_added": added,
+        "nodes_removed": removed,
+        "nodes_modified": modified,
+    })
 }
 
 // --- Comment types ---

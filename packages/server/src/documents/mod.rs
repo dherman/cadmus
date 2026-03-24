@@ -33,6 +33,8 @@ pub struct DocumentSession {
     pub doc_id: Uuid,
     pub awareness: AwarenessRef,
     pub broadcast_group: Arc<BroadcastGroup>,
+    /// The S3 key of the most recent flushed snapshot, used as a version identifier.
+    pub current_version: RwLock<Option<String>>,
     flush_notify: Notify,
     update_count: AtomicU64,
     connection_count: AtomicU64,
@@ -53,6 +55,7 @@ impl DocumentSession {
             doc_id,
             awareness,
             broadcast_group,
+            current_version: RwLock::new(None),
             flush_notify: Notify::new(),
             update_count: AtomicU64::new(0),
             connection_count: AtomicU64::new(0),
@@ -121,11 +124,30 @@ impl DocumentSession {
             .await
             .map_err(|e| AppError::Internal(format!("Failed to clear update log: {}", e)))?;
 
+        // Update current version
+        {
+            let mut version = self.current_version.write().await;
+            *version = Some(key.clone());
+        }
+
         // Reset update counter
         self.update_count.store(0, Ordering::Relaxed);
 
-        tracing::info!("Flushed document {} to S3", self.doc_id);
+        tracing::info!("Flushed document {} to S3 (version: {})", self.doc_id, key);
         Ok(())
+    }
+
+    /// Flush the document and return the new version key.
+    pub async fn trigger_flush(
+        &self,
+        db: &Database,
+        storage: &SnapshotStorage,
+    ) -> Result<String, AppError> {
+        self.flush(db, storage).await?;
+        let version = self.current_version.read().await;
+        version
+            .clone()
+            .ok_or_else(|| AppError::Internal("Version not set after flush".to_string()))
     }
 
     /// Increment the connection counter.
@@ -202,6 +224,12 @@ impl SessionManager {
 
         // Create session
         let session = DocumentSession::new_with_doc(doc_id, doc).await;
+
+        // Set initial version from the snapshot key
+        if let Some(ref key) = doc_row.snapshot_key {
+            let mut version = session.current_version.write().await;
+            *version = Some(key.clone());
+        }
 
         // Start update logging
         session.start_update_logging(db.clone());

@@ -39,17 +39,39 @@ impl SnapshotStorage {
 
     /// Upload a document snapshot to S3.
     /// Returns the S3 key where the snapshot was stored.
+    /// Each snapshot gets a unique version key (UUID) in addition to updating `latest.yrs`.
     pub async fn upload_snapshot(&self, doc_id: Uuid, data: &[u8]) -> Result<String, AppError> {
-        let key = format!("snapshots/{}/latest.yrs", doc_id);
+        let version_id = Uuid::new_v4().to_string();
+        let version_key = format!("snapshots/{}/{}.yrs", doc_id, version_id);
+        let latest_key = format!("snapshots/{}/latest.yrs", doc_id);
+
+        // Upload versioned snapshot
         self.client
             .put_object()
             .bucket(&self.bucket)
-            .key(&key)
+            .key(&version_key)
             .body(data.to_vec().into())
             .send()
             .await
             .map_err(|e| AppError::Internal(format!("S3 upload failed: {}", e)))?;
-        Ok(key)
+
+        // Also update latest.yrs for backwards compatibility
+        self.client
+            .put_object()
+            .bucket(&self.bucket)
+            .key(&latest_key)
+            .body(data.to_vec().into())
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("S3 upload failed: {}", e)))?;
+
+        Ok(version_key)
+    }
+
+    /// Download a specific version snapshot from S3.
+    /// The version string is the full S3 key (e.g., `snapshots/{doc_id}/{uuid}.yrs`).
+    pub async fn load_version_snapshot(&self, version: &str) -> Result<Option<Vec<u8>>, AppError> {
+        self.download_snapshot(version).await
     }
 
     /// Download a document snapshot from S3.

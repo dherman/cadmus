@@ -2,15 +2,15 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Agent Token Management) is merged
+- [x] PR 1 (Agent Token Management) is merged
 
 ## Steps
 
 ### 1. Add version tracking to document storage
 
-- [ ] In `packages/server/src/documents/storage.rs`, ensure that each flush to S3 records a version identifier. The snapshot key (UUID) serves as the version ID.
+- [x] In `packages/server/src/documents/storage.rs`, ensure that each flush to S3 records a version identifier. The snapshot key (UUID) serves as the version ID.
 
-- [ ] Add a `current_version` field to `DocumentSession` in `packages/server/src/documents/mod.rs`:
+- [x] Add a `current_version` field to `DocumentSession` in `packages/server/src/documents/mod.rs`:
 
 ```rust
 pub struct DocumentSession {
@@ -19,13 +19,13 @@ pub struct DocumentSession {
 }
 ```
 
-- [ ] Update the flush logic to set `current_version` after each successful S3 write.
+- [x] Update the flush logic to set `current_version` after each successful S3 write.
 
-- [ ] Add a method `load_version_snapshot(version: &str) -> Result<Vec<u8>>` to `SnapshotStorage` that loads a specific S3 snapshot by key.
+- [x] Add a method `load_version_snapshot(version: &str) -> Result<Vec<u8>>` to `SnapshotStorage` that loads a specific S3 snapshot by key.
 
 ### 2. Update the content-read endpoint to return version
 
-- [ ] In `packages/server/src/documents/api.rs`, update `get_content` to include the current version in its response:
+- [x] In `packages/server/src/documents/api.rs`, update `get_content` to include the current version in its response:
 
 ```rust
 // Response for GET /api/docs/{id}/content
@@ -37,19 +37,19 @@ pub struct DocumentSession {
 }
 ```
 
-- [ ] The version comes from `session.current_version`. If the session was just loaded from S3, the version is the snapshot key. If no flush has occurred yet (new document), generate an initial version on first read.
+- [x] The version comes from `session.current_version`. If the session was just loaded from S3, the version is the snapshot key. If no flush has occurred yet (new document), generate an initial version on first read.
 
 ### 3. Add Yrs JSON extraction utility
 
-- [ ] In `packages/server/src/documents/yrs_json.rs`, ensure there are functions for:
+- [x] In `packages/server/src/documents/yrs_json.rs`, ensure there are functions for:
   - `extract_prosemirror_json(doc: &Doc) -> Result<serde_json::Value>` — reads the Yrs XML fragment and converts to ProseMirror JSON.
   - `replace_yrs_content(doc: &Doc, pm_json: &serde_json::Value) -> Result<()>` — replaces the entire Yrs document content with new ProseMirror JSON (interim strategy for PR 2, upgraded to Step-based in PR 3).
 
-- [ ] The extraction function already exists from M4. Verify it handles all schema node types. The replacement function is new — it creates a Yrs transaction, clears the XML fragment, and rebuilds it from the ProseMirror JSON.
+- [x] The extraction function already exists from M4. Verify it handles all schema node types. The replacement function is new — it creates a Yrs transaction, clears the XML fragment, and rebuilds it from the ProseMirror JSON.
 
 ### 4. Implement the push_content handler
 
-- [ ] In `packages/server/src/documents/api.rs`, replace the stub `push_content` with the full implementation:
+- [x] In `packages/server/src/documents/api.rs`, replace the stub `push_content` with the full implementation:
 
 ```rust
 pub async fn push_content(
@@ -107,7 +107,7 @@ pub async fn push_content(
 
 ### 5. Add query parameter support for dry_run
 
-- [ ] Add a query parameter struct:
+- [x] Add a query parameter struct:
 
 ```rust
 #[derive(Deserialize)]
@@ -118,13 +118,13 @@ pub struct PushContentQuery {
 
 ### 6. Implement unified diff generation
 
-- [ ] Add a utility function `generate_unified_diff(old: &str, new: &str) -> String` that produces a standard unified diff between two markdown strings. Use the `similar` crate (already common in Rust projects) or a simple line-by-line diff.
+- [x] Add a utility function `generate_unified_diff(old: &str, new: &str) -> String` that produces a standard unified diff between two markdown strings. Use the `similar` crate (already common in Rust projects) or a simple line-by-line diff.
 
-- [ ] Add `similar` to `Cargo.toml` if not already present.
+- [x] Add `similar` to `Cargo.toml` if not already present.
 
 ### 7. Implement change summary computation
 
-- [ ] Add `compute_change_summary(steps: &[serde_json::Value]) -> serde_json::Value`:
+- [x] Add `compute_change_summary(steps: &[serde_json::Value]) -> serde_json::Value`:
 
 ```rust
 fn compute_change_summary(steps: &[serde_json::Value]) -> serde_json::Value {
@@ -158,7 +158,7 @@ fn compute_change_summary(steps: &[serde_json::Value]) -> serde_json::Value {
 
 ### 8. Implement yrs_json::replace_yrs_content
 
-- [ ] In `packages/server/src/documents/yrs_json.rs`, implement the full document replace:
+- [x] In `packages/server/src/documents/yrs_json.rs`, implement the full document replace:
 
 ```rust
 pub fn replace_yrs_content(doc: &Doc, pm_json: &serde_json::Value) -> Result<()> {
@@ -182,16 +182,16 @@ This is the interim strategy. It works correctly but doesn't preserve concurrent
 
 ### 9. Test the push endpoint
 
-- [ ] Start the full dev stack: `pnpm dev`
-- [ ] Create a document and add some content via the browser editor.
-- [ ] Get the document content and version:
+- [x] Start the full dev stack: `pnpm dev`
+- [x] Create a document and add some content via the browser editor.
+- [x] Get the document content and version:
 
 ```bash
 curl http://localhost:8080/api/docs/{id}/content?format=markdown \
   -H 'Authorization: Bearer <token>'
 ```
 
-- [ ] Test dry-run:
+- [x] Test dry-run:
 
 ```bash
 curl -X POST 'http://localhost:8080/api/docs/{id}/content?dry_run=true' \
@@ -204,7 +204,7 @@ curl -X POST 'http://localhost:8080/api/docs/{id}/content?dry_run=true' \
   }'
 ```
 
-- [ ] Test actual push:
+- [x] Test actual push:
 
 ```bash
 curl -X POST http://localhost:8080/api/docs/{id}/content \
@@ -217,14 +217,14 @@ curl -X POST http://localhost:8080/api/docs/{id}/content \
   }'
 ```
 
-- [ ] Verify the document content changed by reading it again.
-- [ ] Verify a browser client connected to the document sees the change in real time.
+- [x] Verify the document content changed by reading it again.
+- [x] Verify a browser client connected to the document sees the change in real time.
 
 ### 10. Build and format check
 
-- [ ] Run `cargo build` in `packages/server/` — compiles without errors.
-- [ ] Run `cargo test` in `packages/server/` — all tests pass.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `cargo build` in `packages/server/` — compiles without errors.
+- [x] Run `cargo test` in `packages/server/` — all tests pass.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
