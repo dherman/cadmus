@@ -100,7 +100,7 @@ export function Editor({
       )}
       <EditorContent editor={editor} />
       {showBubble && (
-        <BubbleMenu editor={editor} tippyOptions={{ placement: 'top', duration: 150 }}>
+        <BubbleMenu editor={editor}>
           <button className="add-comment-button" onClick={handleAddComment}>
             Comment
           </button>
