@@ -9,7 +9,6 @@ import { Toolbar } from './Toolbar';
 import {
   CommentHighlightExtension,
   COMMENT_HIGHLIGHT_META,
-  commentHighlightKey,
 } from './comment-highlight-plugin';
 import type * as Y from 'yjs';
 import type { WebsocketProvider } from 'y-websocket';
