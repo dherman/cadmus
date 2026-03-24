@@ -16,7 +16,7 @@ pub struct CommentRow {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CommentResponse {
     pub id: Uuid,
     pub document_id: Uuid,
@@ -30,7 +30,7 @@ pub struct CommentResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CommentAuthor {
     pub id: Uuid,
     pub display_name: String,
