@@ -85,6 +85,8 @@ export function Editor({
     const { from, to } = editor.state.selection;
     if (from === to) return;
     onAddComment(from, to);
+    // Collapse selection so the BubbleMenu disappears
+    editor.commands.setTextSelection(to);
   }, [editor, onAddComment]);
 
   if (!editor) return null;
