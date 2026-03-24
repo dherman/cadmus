@@ -2,31 +2,31 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Comments Table & CRUD API) is merged
+- [x] PR 1 (Comments Table & CRUD API) is merged
 
 ## Steps
 
 ### 1. Create the events module
 
-- [ ] Create `packages/server/src/websocket/events.rs` with:
+- [x] Create `packages/server/src/websocket/events.rs` with:
   - `COMMENT_EVENT_TAG` constant (`u8 = 100`)
   - `CommentEvent` enum (Created, Updated, Resolved, Unresolved, Replied) with serde tag serialization
   - `CommentEventPayload` and `CommentEventAuthor` structs
   - `broadcast_comment_event` async function
 
-- [ ] Add `pub mod events;` to `packages/server/src/websocket/mod.rs`.
+- [x] Add `pub mod events;` to `packages/server/src/websocket/mod.rs`.
 
 ### 2. Add custom message broadcasting to DocumentSession
 
-- [ ] Verify that the `yrs-axum` `BroadcastGroup` supports sending custom messages. Check the `yrs-axum` API for the correct method — likely `broadcast_custom` or a method on the `BroadcastGroup` that accepts a custom tag and payload bytes.
+- [x] Verify that the `yrs-axum` `BroadcastGroup` supports sending custom messages. Check the `yrs-axum` API for the correct method — likely `broadcast_custom` or a method on the `BroadcastGroup` that accepts a custom tag and payload bytes.
 
-- [ ] If `BroadcastGroup` doesn't directly expose custom message broadcasting, add a helper method to `DocumentSession` that encodes a custom message in the y-sync wire format and sends it through the group's sink. The y-sync custom message format is:
+- [x] If `BroadcastGroup` doesn't directly expose custom message broadcasting, add a helper method to `DocumentSession` that encodes a custom message in the y-sync wire format and sends it through the group's sink. The y-sync custom message format is:
 
   ```
   [MSG_CUSTOM tag byte] [custom_tag: u8] [payload: bytes]
   ```
 
-- [ ] Add a `broadcast_custom(tag: u8, payload: &[u8])` method to `DocumentSession`:
+- [x] Add a `broadcast_custom(tag: u8, payload: &[u8])` method to `DocumentSession`:
 
 ```rust
 impl DocumentSession {
@@ -39,7 +39,7 @@ impl DocumentSession {
 
 ### 3. Wire broadcasting into comment REST handlers
 
-- [ ] Modify each comment handler in `packages/server/src/documents/api.rs` to broadcast after mutation:
+- [x] Modify each comment handler in `packages/server/src/documents/api.rs` to broadcast after mutation:
 
 **`create_comment`:**
 
@@ -81,7 +81,7 @@ Note: broadcasting failures are logged but don't fail the REST response (`.ok()`
 
 ### 4. Add a From impl for CommentResponse → CommentEventPayload
 
-- [ ] Implement `From<CommentResponse>` for `CommentEventPayload` to avoid manual field mapping in every handler:
+- [x] Implement `From<CommentResponse>` for `CommentEventPayload` to avoid manual field mapping in every handler:
 
 ```rust
 impl From<CommentResponse> for CommentEventPayload {
@@ -106,32 +106,33 @@ impl From<CommentResponse> for CommentEventPayload {
 }
 ```
 
-### 5. Test broadcasting manually
+### 5. Test broadcasting
 
-- [ ] Start the full dev stack: `pnpm dev`
-- [ ] Open a document in two browser tabs.
-- [ ] In the browser console of tab 1, add a listener for custom WebSocket messages (or use the browser's Network tab → WS frame inspector).
-- [ ] In tab 2, create a comment via curl (or later via the UI when PR 4 is done).
-- [ ] Verify that tab 1 receives a WebSocket frame with the comment event payload.
-- [ ] Repeat for reply, edit, resolve, unresolve — verify each event type is broadcast.
+Manual testing replaced by automated integration tests in `packages/server/tests/websocket_test.rs`:
+
+- [x] `comment_create_broadcasts_event` — connects a WS client, creates a comment via REST, decodes the y-sync `Custom(100, ...)` frame, asserts the JSON payload
+- [x] `comment_reply_broadcasts_event` — creates a parent comment, replies, verifies `Replied` event with correct `parent_id`
+- [x] `comment_edit_broadcasts_event` — edits a comment, verifies `Updated` event with new body
+- [x] `comment_resolve_unresolve_broadcasts_events` — resolves then unresolves, verifies both `Resolved` and `Unresolved` events
+- [x] `comment_no_broadcast_when_no_ws_clients` — creates a comment with no WS connections, verifies the REST response succeeds (no errors)
 
 ### 6. Build and verify
 
-- [ ] Run `cargo build` — compiles without errors.
-- [ ] Run `cargo test` — all tests pass.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `cargo build` — compiles without errors.
+- [x] Run `cargo test` — all tests pass.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] Creating a comment broadcasts a `created` event to all connected WS clients
-- [ ] Replying to a comment broadcasts a `replied` event
-- [ ] Editing a comment broadcasts an `updated` event
-- [ ] Resolving a comment broadcasts a `resolved` event
-- [ ] Unresolving a comment broadcasts an `unresolved` event
-- [ ] Event payloads contain the full comment data (author info, anchors, body, status)
-- [ ] Broadcasting failure doesn't fail the REST response
-- [ ] No events are sent when no clients are connected (no-op, no errors)
-- [ ] Events are valid JSON that can be parsed client-side
+- [x] Creating a comment broadcasts a `created` event to all connected WS clients
+- [x] Replying to a comment broadcasts a `replied` event
+- [x] Editing a comment broadcasts an `updated` event
+- [x] Resolving a comment broadcasts a `resolved` event
+- [x] Unresolving a comment broadcasts an `unresolved` event
+- [x] Event payloads contain the full comment data (author info, anchors, body, status)
+- [x] Broadcasting failure doesn't fail the REST response
+- [x] No events are sent when no clients are connected (no-op, no errors)
+- [x] Events are valid JSON that can be parsed client-side
 
 ## Files Modified
 

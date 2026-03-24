@@ -146,6 +146,11 @@ impl SessionManager {
         }
     }
 
+    /// Get a session if it is already loaded in memory (no I/O).
+    pub fn get(&self, doc_id: Uuid) -> Option<Arc<DocumentSession>> {
+        self.sessions.get(&doc_id).map(|r| r.clone())
+    }
+
     /// Insert a pre-built session into the cache (for testing).
     pub fn preload(&self, doc_id: Uuid, session: Arc<DocumentSession>) {
         self.sessions.insert(doc_id, session);

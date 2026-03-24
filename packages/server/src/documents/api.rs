@@ -253,6 +253,7 @@ pub async fn push_content(
 use super::comments::{
     CommentAuthor, CommentResponse, CreateCommentRequest, CreateReplyRequest, EditCommentRequest,
 };
+use crate::websocket::events::{broadcast_comment_event, CommentEvent};
 
 #[derive(Deserialize)]
 pub struct CommentListQuery {
@@ -417,6 +418,14 @@ pub async fn create_comment(
 
     let response =
         get_comment_response(&state.db, &comment, anchor_from_echo, anchor_to_echo).await?;
+    broadcast_comment_event(
+        &state.document_sessions,
+        id,
+        CommentEvent::Created {
+            comment: response.clone().into(),
+        },
+    )
+    .await;
     Ok((StatusCode::CREATED, Json(response)))
 }
 
@@ -456,6 +465,14 @@ pub async fn reply_to_comment(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let response = get_comment_response(&state.db, &reply, None, None).await?;
+    broadcast_comment_event(
+        &state.document_sessions,
+        doc_id,
+        CommentEvent::Replied {
+            comment: response.clone().into(),
+        },
+    )
+    .await;
     Ok((StatusCode::CREATED, Json(response)))
 }
 
@@ -495,6 +512,14 @@ pub async fn edit_comment(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let response = get_comment_response(&state.db, &updated, None, None).await?;
+    broadcast_comment_event(
+        &state.document_sessions,
+        doc_id,
+        CommentEvent::Updated {
+            comment: response.clone().into(),
+        },
+    )
+    .await;
     Ok(Json(response))
 }
 
@@ -529,6 +554,14 @@ pub async fn resolve_comment(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let response = get_comment_response(&state.db, &updated, None, None).await?;
+    broadcast_comment_event(
+        &state.document_sessions,
+        doc_id,
+        CommentEvent::Resolved {
+            comment: response.clone().into(),
+        },
+    )
+    .await;
     Ok(Json(response))
 }
 
@@ -563,5 +596,13 @@ pub async fn unresolve_comment(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let response = get_comment_response(&state.db, &updated, None, None).await?;
+    broadcast_comment_event(
+        &state.document_sessions,
+        doc_id,
+        CommentEvent::Unresolved {
+            comment: response.clone().into(),
+        },
+    )
+    .await;
     Ok(Json(response))
 }

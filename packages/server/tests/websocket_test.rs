@@ -8,6 +8,7 @@
 //! Skip with: set SKIP_PERSISTENCE_TESTS=1
 
 use cadmus_server::db::Database;
+use cadmus_server::websocket::events::{CommentEvent, COMMENT_EVENT_TAG};
 use cadmus_server::{build_router, AppState};
 use futures_util::{SinkExt, StreamExt};
 use std::sync::Arc;
@@ -15,6 +16,7 @@ use tokio::net::TcpListener;
 use tokio::time::{timeout, Duration};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 use yrs::sync::{Message as YrsMessage, SyncMessage};
+use yrs::updates::decoder::Decode;
 use yrs::updates::encoder::Encode;
 use yrs::StateVector;
 
@@ -304,4 +306,307 @@ async fn two_clients_sync_edits() {
 
     assert!(!update_msg_1.is_empty(), "client 1 received empty update");
     assert!(!update_msg_2.is_empty(), "client 2 received empty update");
+}
+
+/// Read binary WS frames until we find a y-sync Custom message with the given tag,
+/// or time out. Returns the decoded payload bytes.
+async fn read_custom_message(
+    ws: &mut (impl StreamExt<Item = Result<Message, tokio_tungstenite::tungstenite::Error>> + Unpin),
+    expected_tag: u8,
+) -> Vec<u8> {
+    timeout(TIMEOUT, async {
+        loop {
+            match ws.next().await {
+                Some(Ok(Message::Binary(data))) => {
+                    if let Ok(msg) = YrsMessage::decode_v1(&data) {
+                        if let YrsMessage::Custom(tag, payload) = msg {
+                            if tag == expected_tag {
+                                return payload;
+                            }
+                        }
+                    }
+                    // Not the custom message we want — keep reading
+                }
+                Some(Ok(_)) => continue,
+                Some(Err(e)) => panic!("WebSocket error while waiting for custom message: {e}"),
+                None => panic!("WebSocket closed before receiving custom message"),
+            }
+        }
+    })
+    .await
+    .expect("timed out waiting for custom message")
+}
+
+/// Connect a WS client and complete the y-sync handshake (send SyncStep1, drain SyncStep2).
+async fn connect_and_sync(
+    base_url: &str,
+    doc_id: &str,
+    ws_token: &str,
+) -> tokio_tungstenite::WebSocketStream<
+    tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+> {
+    let ws_url = format!(
+        "{}/api/docs/{}/ws?token={}",
+        base_url.replace("http://", "ws://"),
+        doc_id,
+        ws_token
+    );
+
+    let (mut ws, _) = timeout(TIMEOUT, connect_async(&ws_url))
+        .await
+        .expect("timeout connecting WS")
+        .expect("WebSocket connect failed");
+
+    // Complete y-sync handshake
+    ws.send(Message::Binary(sync_step1_msg().into()))
+        .await
+        .expect("failed to send SyncStep1");
+
+    // Drain the SyncStep2 response(s)
+    for _ in 0..2 {
+        let _ = timeout(Duration::from_millis(300), ws.next()).await;
+    }
+
+    ws
+}
+
+#[tokio::test]
+async fn comment_create_broadcasts_event() {
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let (token, _) = register_user(&client, &base_url).await;
+    let doc_id = create_doc(&client, &base_url, &token).await;
+
+    // Connect a WS client and complete y-sync handshake
+    let ws_token = get_ws_token(&client, &base_url, &token).await;
+    let mut ws = connect_and_sync(&base_url, &doc_id, &ws_token).await;
+
+    // Create a comment via REST
+    let resp = client
+        .post(format!("{base_url}/api/docs/{doc_id}/comments"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({
+            "body": "Hello from the test!"
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+    let created: serde_json::Value = resp.json().await.unwrap();
+
+    // Read the broadcast custom message from the WS stream
+    let payload = read_custom_message(&mut ws, COMMENT_EVENT_TAG).await;
+    let event: CommentEvent =
+        serde_json::from_slice(&payload).expect("failed to parse CommentEvent JSON");
+
+    match event {
+        CommentEvent::Created { comment } => {
+            assert_eq!(comment.id, created["id"].as_str().unwrap());
+            assert_eq!(comment.body, "Hello from the test!");
+            assert_eq!(comment.status, "open");
+            assert!(!comment.author.display_name.is_empty());
+        }
+        other => panic!("expected Created event, got: {:?}", other),
+    }
+}
+
+#[tokio::test]
+async fn comment_reply_broadcasts_event() {
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let (token, _) = register_user(&client, &base_url).await;
+    let doc_id = create_doc(&client, &base_url, &token).await;
+
+    let ws_token = get_ws_token(&client, &base_url, &token).await;
+    let mut ws = connect_and_sync(&base_url, &doc_id, &ws_token).await;
+
+    // Create a parent comment
+    let resp = client
+        .post(format!("{base_url}/api/docs/{doc_id}/comments"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "body": "parent" }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+    let parent: serde_json::Value = resp.json().await.unwrap();
+    let parent_id = parent["id"].as_str().unwrap();
+
+    // Drain the Created event
+    let _ = read_custom_message(&mut ws, COMMENT_EVENT_TAG).await;
+
+    // Reply to the comment
+    let resp = client
+        .post(format!(
+            "{base_url}/api/docs/{doc_id}/comments/{parent_id}/replies"
+        ))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "body": "a reply" }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+
+    let payload = read_custom_message(&mut ws, COMMENT_EVENT_TAG).await;
+    let event: CommentEvent = serde_json::from_slice(&payload).unwrap();
+
+    match event {
+        CommentEvent::Replied { comment } => {
+            assert_eq!(comment.body, "a reply");
+            assert_eq!(comment.parent_id.as_deref(), Some(parent_id));
+        }
+        other => panic!("expected Replied event, got: {:?}", other),
+    }
+}
+
+#[tokio::test]
+async fn comment_edit_broadcasts_event() {
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let (token, _) = register_user(&client, &base_url).await;
+    let doc_id = create_doc(&client, &base_url, &token).await;
+
+    let ws_token = get_ws_token(&client, &base_url, &token).await;
+    let mut ws = connect_and_sync(&base_url, &doc_id, &ws_token).await;
+
+    // Create a comment
+    let resp = client
+        .post(format!("{base_url}/api/docs/{doc_id}/comments"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "body": "original" }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+    let comment: serde_json::Value = resp.json().await.unwrap();
+    let comment_id = comment["id"].as_str().unwrap();
+
+    // Drain the Created event
+    let _ = read_custom_message(&mut ws, COMMENT_EVENT_TAG).await;
+
+    // Edit the comment
+    let resp = client
+        .put(format!(
+            "{base_url}/api/docs/{doc_id}/comments/{comment_id}"
+        ))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "body": "edited" }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+
+    let payload = read_custom_message(&mut ws, COMMENT_EVENT_TAG).await;
+    let event: CommentEvent = serde_json::from_slice(&payload).unwrap();
+
+    match event {
+        CommentEvent::Updated { comment } => {
+            assert_eq!(comment.body, "edited");
+        }
+        other => panic!("expected Updated event, got: {:?}", other),
+    }
+}
+
+#[tokio::test]
+async fn comment_resolve_unresolve_broadcasts_events() {
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let (token, _) = register_user(&client, &base_url).await;
+    let doc_id = create_doc(&client, &base_url, &token).await;
+
+    let ws_token = get_ws_token(&client, &base_url, &token).await;
+    let mut ws = connect_and_sync(&base_url, &doc_id, &ws_token).await;
+
+    // Create a comment
+    let resp = client
+        .post(format!("{base_url}/api/docs/{doc_id}/comments"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "body": "to resolve" }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+    let comment: serde_json::Value = resp.json().await.unwrap();
+    let comment_id = comment["id"].as_str().unwrap();
+
+    // Drain the Created event
+    let _ = read_custom_message(&mut ws, COMMENT_EVENT_TAG).await;
+
+    // Resolve the comment
+    let resp = client
+        .post(format!(
+            "{base_url}/api/docs/{doc_id}/comments/{comment_id}/resolve"
+        ))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+
+    let payload = read_custom_message(&mut ws, COMMENT_EVENT_TAG).await;
+    let event: CommentEvent = serde_json::from_slice(&payload).unwrap();
+
+    match event {
+        CommentEvent::Resolved { comment } => {
+            assert_eq!(comment.status, "resolved");
+        }
+        other => panic!("expected Resolved event, got: {:?}", other),
+    }
+
+    // Unresolve the comment
+    let resp = client
+        .post(format!(
+            "{base_url}/api/docs/{doc_id}/comments/{comment_id}/unresolve"
+        ))
+        .bearer_auth(&token)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+
+    let payload = read_custom_message(&mut ws, COMMENT_EVENT_TAG).await;
+    let event: CommentEvent = serde_json::from_slice(&payload).unwrap();
+
+    match event {
+        CommentEvent::Unresolved { comment } => {
+            assert_eq!(comment.status, "open");
+        }
+        other => panic!("expected Unresolved event, got: {:?}", other),
+    }
+}
+
+#[tokio::test]
+async fn comment_no_broadcast_when_no_ws_clients() {
+    let Some((base_url, _state)) = spawn_test_server().await else {
+        return;
+    };
+
+    let client = reqwest::Client::new();
+    let (token, _) = register_user(&client, &base_url).await;
+    let doc_id = create_doc(&client, &base_url, &token).await;
+
+    // Create a comment WITHOUT any WS clients connected — should succeed without error
+    let resp = client
+        .post(format!("{base_url}/api/docs/{doc_id}/comments"))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({ "body": "no listeners" }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+
+    let body: serde_json::Value = resp.json().await.unwrap();
+    assert_eq!(body["body"], "no listeners");
 }
