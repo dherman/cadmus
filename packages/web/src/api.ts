@@ -199,3 +199,24 @@ export async function removePermission(docId: string, userId: string): Promise<v
     throw new Error(body.error || 'Failed to remove permission');
   }
 }
+
+// --- Document Content API ---
+
+export interface DocumentContent {
+  format: 'markdown' | 'json';
+  content: string | object;
+}
+
+export async function fetchDocumentContent(
+  id: string,
+  format: 'markdown' | 'json' = 'json',
+): Promise<DocumentContent> {
+  const res = await authFetch(
+    `${API_BASE}/api/docs/${encodeURIComponent(id)}/content?format=${format}`,
+  );
+  if (!res.ok) {
+    const body = await res.json();
+    throw new Error(body.error || 'Failed to fetch document content');
+  }
+  return res.json();
+}

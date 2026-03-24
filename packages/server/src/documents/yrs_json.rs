@@ -6,15 +6,15 @@ use yrs::{Any, Doc, ReadTxn, Text, Transact, Xml, XmlElementRef, XmlTextRef};
 
 /// Extract ProseMirror JSON from a Yrs document.
 ///
-/// y-prosemirror stores document content in an XmlFragment named "prosemirror".
-/// This function walks the Yrs XML tree and produces the equivalent ProseMirror
-/// JSON representation.
+/// TipTap's Collaboration extension stores document content in an XmlFragment
+/// named "default". This function walks the Yrs XML tree and produces the
+/// equivalent ProseMirror JSON representation.
 pub fn extract_prosemirror_json(doc: &Doc) -> Result<Value, String> {
     let txn = doc.transact();
 
     let fragment = txn
-        .get_xml_fragment("prosemirror")
-        .ok_or_else(|| "No prosemirror fragment found".to_string())?;
+        .get_xml_fragment("default")
+        .ok_or_else(|| "No default fragment found".to_string())?;
 
     let child_count = fragment.len(&txn);
     if child_count == 0 {
@@ -247,7 +247,7 @@ mod tests {
         {
             // Create the fragment but don't add anything
             let mut txn = doc.transact_mut();
-            txn.get_or_insert_xml_fragment("prosemirror");
+            txn.get_or_insert_xml_fragment("default");
         }
         let result = extract_prosemirror_json(&doc).unwrap();
         assert_eq!(result["type"], "doc");
@@ -259,7 +259,7 @@ mod tests {
         let doc = Doc::new();
         {
             let mut txn = doc.transact_mut();
-            let frag = txn.get_or_insert_xml_fragment("prosemirror");
+            let frag = txn.get_or_insert_xml_fragment("default");
             let para = frag.insert(
                 &mut txn,
                 0,
@@ -291,7 +291,7 @@ mod tests {
         let doc = Doc::new();
         {
             let mut txn = doc.transact_mut();
-            let frag = txn.get_or_insert_xml_fragment("prosemirror");
+            let frag = txn.get_or_insert_xml_fragment("default");
             let para = frag.insert(
                 &mut txn,
                 0,

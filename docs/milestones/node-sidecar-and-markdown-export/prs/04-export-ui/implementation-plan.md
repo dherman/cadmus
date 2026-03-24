@@ -8,7 +8,7 @@
 
 ### 1. Add `fetchDocumentContent` to the API module
 
-- [ ] Add to `packages/web/src/api.ts`:
+- [x] Add to `packages/web/src/api.ts`:
 
 ```typescript
 export interface DocumentContent {
@@ -33,7 +33,7 @@ export async function fetchDocumentContent(
 
 ### 2. Add the export handler and button to `EditorPage.tsx`
 
-- [ ] Add a `downloadMarkdown` helper at the top of the file (or in a utility module):
+- [x] Add a `downloadMarkdown` helper at the top of the file (or in a utility module):
 
 ```typescript
 function downloadMarkdown(filename: string, content: string) {
@@ -57,7 +57,7 @@ function slugify(title: string): string {
 }
 ```
 
-- [ ] In `EditorPageInner`, add export state and handler:
+- [x] In `EditorPageInner`, add export state and handler:
 
 ```typescript
 const [exporting, setExporting] = useState(false);
@@ -77,7 +77,7 @@ async function handleExport() {
 }
 ```
 
-- [ ] Add the Export button and error display to the header JSX, alongside the existing Share button:
+- [x] Add the Export button and error display to the header JSX, alongside the existing Share button:
 
 ```tsx
 <button className="btn-export" onClick={handleExport} disabled={exporting}>
@@ -88,11 +88,11 @@ async function handleExport() {
 }
 ```
 
-- [ ] Add `fetchDocumentContent` to the import from `./api`.
+- [x] Add `fetchDocumentContent` to the import from `./api`.
 
 ### 3. Add styles
 
-- [ ] Add minimal CSS to the existing stylesheet (whichever file contains `.btn-share` styles):
+- [x] Add minimal CSS to the existing stylesheet (whichever file contains `.btn-share` styles):
 
 ```css
 .btn-export {
@@ -119,28 +119,28 @@ async function handleExport() {
 
 ### 4. Manual verification
 
-- [ ] Start the full dev stack: `pnpm dev`
-- [ ] Create a document and add content with various formatting (headings, bold, lists, code).
-- [ ] Click Export — verify the file downloads with the correct name (`<slug>.md`).
-- [ ] Open the downloaded `.md` file and verify it contains canonical markdown matching the editor content.
-- [ ] Verify the button shows "Exporting…" briefly during the request.
-- [ ] Stop the sidecar (`Ctrl+C` in that terminal) and click Export again — verify an error message appears.
-- [ ] Verify the Export button appears for Read-role users (open the doc as a shared user with read access).
+- [x] Start the full dev stack: `pnpm dev`
+- [x] Create a document and add content with various formatting (headings, bold, lists, code).
+- [x] Click Export — verify the file downloads with the correct name (`<slug>.md`).
+- [x] Open the downloaded `.md` file and verify it contains canonical markdown matching the editor content.
+- [x] Verify the button shows "Exporting…" briefly during the request.
+- [x] Stop the sidecar (`Ctrl+C` in that terminal) and click Export again — verify an error message appears.
+- [x] Verify the Export button appears for Read-role users (open the doc as a shared user with read access).
 
 ### 5. Run tests and check formatting
 
-- [ ] Run `pnpm -F @cadmus/web build` — verify TypeScript compiles without errors.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/web build` — verify TypeScript compiles without errors.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] Export button visible in editor header for all role levels (read, comment, edit)
-- [ ] Clicking Export downloads a `.md` file
-- [ ] Downloaded filename is `<document-slug>.md`
-- [ ] Markdown content in downloaded file matches the document as rendered in the editor
-- [ ] Button shows disabled/loading state during export
-- [ ] Error message appears (and disappears on next successful export) when export fails
-- [ ] TypeScript compiles cleanly with no new type errors
+- [x] Export button visible in editor header for all role levels (read, comment, edit)
+- [x] Clicking Export downloads a `.md` file
+- [x] Downloaded filename is `<document-slug>.md`
+- [x] Markdown content in downloaded file matches the document as rendered in the editor
+- [x] Button shows disabled/loading state during export
+- [x] Error message appears (and disappears on next successful export) when export fails
+- [x] TypeScript compiles cleanly with no new type errors
 
 ## Files Modified
 

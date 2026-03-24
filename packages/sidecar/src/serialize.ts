@@ -19,5 +19,13 @@ export function serialize(doc: JSONContent): string {
   const markdown = editor.getMarkdown();
   editor.destroy();
 
-  return markdown;
+  // ProseMirror uses non-breaking spaces (\u00a0 or &nbsp;) as cursor
+  // placeholders in empty blocks. Strip them and remove resulting blank
+  // trailing lines so they don't leak into exported markdown.
+  return (
+    markdown
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\u00a0/g, ' ')
+      .trimEnd() + '\n'
+  );
 }

@@ -5,7 +5,7 @@ import { Presence } from './Presence';
 import { ShareDialog } from './ShareDialog';
 import { useCollaboration } from './useCollaboration';
 import { useAuth } from './auth/AuthContext';
-import { getDocument, DocumentSummary } from './api';
+import { getDocument, fetchDocumentContent, DocumentSummary } from './api';
 
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -93,6 +93,26 @@ export function EditorPage() {
   );
 }
 
+function downloadMarkdown(filename: string, content: string) {
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function slugify(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+  return slug || 'document';
+}
+
 function EditorPageInner({
   docId,
   wsToken,
@@ -110,8 +130,27 @@ function EditorPageInner({
 }) {
   const { ydoc, provider, connectionStatus } = useCollaboration(docId, wsToken);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const isEditable = doc.role === 'edit';
+
+  async function handleExport() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const result = await fetchDocumentContent(docId, 'markdown');
+      const markdown = result.content as string;
+      // Derive filename from first heading in markdown, falling back to doc title
+      const headingMatch = markdown.match(/^#\s+(.+)$/m);
+      const title = headingMatch ? headingMatch[1].trim() : doc.title;
+      downloadMarkdown(`${slugify(title)}.md`, markdown);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   // Handle ws-token expiry (close code 4401)
   useEffect(() => {
@@ -153,6 +192,10 @@ function EditorPageInner({
             Share
           </button>
         )}
+        <button className="btn-export" onClick={handleExport} disabled={exporting}>
+          {exporting ? 'Exporting\u2026' : 'Export'}
+        </button>
+        {exportError && <span className="export-error">{exportError}</span>}
       </header>
       <main className="app-main">
         {ydoc && provider && (
