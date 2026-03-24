@@ -362,6 +362,76 @@ impl Database {
         .await
     }
 
+    // ── Agent token queries ──
+
+    pub async fn create_agent_token(
+        &self,
+        user_id: Uuid,
+        name: &str,
+        token_hash: &str,
+        scopes: &[String],
+        document_ids: Option<&[Uuid]>,
+        expires_at: DateTime<Utc>,
+    ) -> Result<crate::auth::tokens::AgentTokenRow, sqlx::Error> {
+        sqlx::query_as::<_, crate::auth::tokens::AgentTokenRow>(
+            r#"INSERT INTO agent_tokens (user_id, name, token_hash, scopes, document_ids, expires_at)
+               VALUES ($1, $2, $3, $4, $5, $6)
+               RETURNING id, user_id, name, token_hash, scopes, document_ids, expires_at, revoked_at, created_at"#,
+        )
+        .bind(user_id)
+        .bind(name)
+        .bind(token_hash)
+        .bind(scopes)
+        .bind(document_ids)
+        .bind(expires_at)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    pub async fn list_agent_tokens(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<crate::auth::tokens::AgentTokenRow>, sqlx::Error> {
+        sqlx::query_as::<_, crate::auth::tokens::AgentTokenRow>(
+            r#"SELECT id, user_id, name, token_hash, scopes, document_ids, expires_at, revoked_at, created_at
+               FROM agent_tokens
+               WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > NOW()
+               ORDER BY created_at DESC"#,
+        )
+        .bind(user_id)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    pub async fn get_agent_token_by_hash(
+        &self,
+        token_hash: &str,
+    ) -> Result<Option<crate::auth::tokens::AgentTokenRow>, sqlx::Error> {
+        sqlx::query_as::<_, crate::auth::tokens::AgentTokenRow>(
+            r#"SELECT id, user_id, name, token_hash, scopes, document_ids, expires_at, revoked_at, created_at
+               FROM agent_tokens
+               WHERE token_hash = $1"#,
+        )
+        .bind(token_hash)
+        .fetch_optional(&self.pool)
+        .await
+    }
+
+    pub async fn revoke_agent_token(
+        &self,
+        token_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE agent_tokens SET revoked_at = NOW() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL",
+        )
+        .bind(token_id)
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
     // ── Comment queries ──
 
     pub async fn list_comments(

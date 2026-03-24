@@ -11,6 +11,7 @@ use uuid::Uuid;
 use yrs::sync::Error;
 use yrs_axum::ws::AxumSink;
 
+use crate::auth::tokens::{check_document_restriction, hash_token, require_scope};
 use crate::documents::permissions::{require_permission, Permission};
 use crate::errors::AppError;
 use crate::AppState;
@@ -25,7 +26,7 @@ pub struct WsQueryParams {
 /// Handle WebSocket upgrade for real-time document collaboration.
 ///
 /// Flow:
-/// 1. Validate the ws-token from the query parameter.
+/// 1. Validate the token from the query parameter (ws-token JWT or agent token).
 /// 2. Check the user's permission on the document.
 /// 3. Look up or load the document session from persistent storage.
 /// 4. Upgrade to WebSocket.
@@ -37,10 +38,35 @@ pub async fn ws_upgrade(
     Query(params): Query<WsQueryParams>,
     State(state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Validate ws-token
-    let claims = crate::auth::jwt::validate_token(&params.token, "ws", &state.config.jwt_secret)?;
-    let user_id =
-        Uuid::parse_str(&claims.sub).map_err(|_| AppError::Unauthorized("Invalid token".into()))?;
+    let user_id = if params.token.starts_with("cadmus_") {
+        // Agent token path
+        let hash = hash_token(&params.token);
+        let row = state
+            .db
+            .get_agent_token_by_hash(&hash)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?
+            .ok_or_else(|| AppError::Unauthorized("Invalid agent token".into()))?;
+
+        if row.revoked_at.is_some() {
+            return Err(AppError::Unauthorized("Agent token has been revoked".into()));
+        }
+        if row.expires_at < chrono::Utc::now() {
+            return Err(AppError::Unauthorized("Agent token has expired".into()));
+        }
+
+        // Enforce scope and document restrictions
+        require_scope(&Some(row.scopes), "docs:read")?;
+        check_document_restriction(&row.document_ids, doc_id)?;
+
+        row.user_id
+    } else {
+        // JWT ws-token path (existing logic)
+        let claims =
+            crate::auth::jwt::validate_token(&params.token, "ws", &state.config.jwt_secret)?;
+        Uuid::parse_str(&claims.sub)
+            .map_err(|_| AppError::Unauthorized("Invalid token".into()))?
+    };
 
     // Check document permission
     let permission = require_permission(&state.db, user_id, doc_id, Permission::Read).await?;
