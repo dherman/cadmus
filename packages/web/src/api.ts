@@ -248,7 +248,10 @@ export async function createComment(
       anchor_to: anchorTo,
     }),
   });
-  if (!res.ok) throw new Error('Failed to create comment');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to create comment');
+  }
   return res.json();
 }
 

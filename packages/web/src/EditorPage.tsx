@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Editor } from './Editor';
 import { Presence } from './Presence';
 import { ShareDialog } from './ShareDialog';
+import { CommentSidebar } from './CommentSidebar';
 import { useCollaboration } from './useCollaboration';
+import { useComments } from './useComments';
 import { useAuth } from './auth/AuthContext';
 import { getDocument, fetchDocumentContent, DocumentSummary } from './api';
 
@@ -133,7 +135,21 @@ function EditorPageInner({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
+  // Comment state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+  const [pendingAnchor, setPendingAnchor] = useState<{ from: number; to: number } | null>(null);
+
+  const {
+    comments,
+    createComment: handleCreateComment,
+    replyToComment: handleReply,
+    resolveComment: handleResolve,
+    unresolveComment: handleUnresolve,
+  } = useComments(docId, provider);
+
   const isEditable = doc.role === 'edit';
+  const canComment = doc.role === 'comment' || doc.role === 'edit';
 
   async function handleExport() {
     setExporting(true);
@@ -178,6 +194,24 @@ function EditorPageInner({
     };
   }, [provider, getWsToken]);
 
+  const handleAddComment = useCallback((from: number, to: number) => {
+    setPendingAnchor({ from, to });
+    setSidebarOpen(true);
+  }, []);
+
+  const handleHighlightClick = useCallback((commentId: string) => {
+    setActiveCommentId(commentId);
+    setSidebarOpen(true);
+  }, []);
+
+  const handleCommentClick = useCallback((commentId: string) => {
+    setActiveCommentId(commentId);
+  }, []);
+
+  const handleCancelCreate = useCallback(() => {
+    setPendingAnchor(null);
+  }, []);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -195,13 +229,46 @@ function EditorPageInner({
         <button className="btn-export" onClick={handleExport} disabled={exporting}>
           {exporting ? 'Exporting\u2026' : 'Export'}
         </button>
+        <button
+          className={`btn-comments${sidebarOpen ? ' active' : ''}`}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          Comments
+        </button>
         {exportError && <span className="export-error">{exportError}</span>}
       </header>
-      <main className="app-main">
-        {ydoc && provider && (
-          <Editor ydoc={ydoc} provider={provider} user={user} editable={isEditable} />
+      <div className="editor-with-sidebar">
+        <main className="app-main">
+          {ydoc && provider && (
+            <Editor
+              ydoc={ydoc}
+              provider={provider}
+              user={user}
+              editable={isEditable}
+              canComment={canComment}
+              comments={comments}
+              activeCommentId={activeCommentId}
+              onAddComment={handleAddComment}
+              onHighlightClick={handleHighlightClick}
+            />
+          )}
+        </main>
+        {sidebarOpen && (
+          <CommentSidebar
+            comments={comments}
+            onCreateComment={handleCreateComment}
+            onReply={handleReply}
+            onResolve={handleResolve}
+            onUnresolve={handleUnresolve}
+            activeCommentId={activeCommentId}
+            onCommentClick={handleCommentClick}
+            pendingAnchor={pendingAnchor}
+            onCancelCreate={handleCancelCreate}
+            onClose={() => setSidebarOpen(false)}
+            canComment={canComment}
+          />
         )}
-      </main>
+      </div>
 
       {showShareDialog && (
         <ShareDialog docId={docId} docTitle={doc.title} onClose={() => setShowShareDialog(false)} />

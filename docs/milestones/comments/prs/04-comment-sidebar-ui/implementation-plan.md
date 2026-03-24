@@ -9,7 +9,7 @@
 
 ### 1. Create the `useComments` hook
 
-- [ ] Create `packages/web/src/useComments.ts`:
+- [x] Create `packages/web/src/useComments.ts`:
 
 ```typescript
 import { useState, useEffect, useCallback } from 'react';
@@ -124,11 +124,11 @@ export function useComments(docId: string, wsProvider: WebsocketProvider | null)
 }
 ```
 
-- [ ] Verify the `y-websocket` provider emits `custom-message` events. If it doesn't natively, we may need to hook into the WebSocket `message` event directly and parse custom messages from the y-sync wire format. Check the `y-websocket` source and adjust the listener accordingly.
+- [x] Verify the `y-websocket` provider emits `custom-message` events. If it doesn't natively, we may need to hook into the WebSocket `message` event directly and parse custom messages from the y-sync wire format. Check the `y-websocket` source and adjust the listener accordingly.
 
 ### 2. Create the `CommentSidebar` component
 
-- [ ] Create `packages/web/src/CommentSidebar.tsx`:
+- [x] Create `packages/web/src/CommentSidebar.tsx`:
   - Render a list of top-level comments (where `parent_id === null`), sorted by `created_at`
   - Each comment card shows: author avatar/name, relative time (e.g., "2m ago"), body text
   - "Reply" and "Resolve" buttons on each card (visible only for Comment/Edit roles)
@@ -138,7 +138,7 @@ export function useComments(docId: string, wsProvider: WebsocketProvider | null)
 
 ### 3. Add anchor highlighting to the editor
 
-- [ ] Create a Tiptap plugin (or ProseMirror plugin) that renders comment highlight decorations:
+- [x] Create a Tiptap plugin (or ProseMirror plugin) that renders comment highlight decorations:
 
 ```typescript
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -179,11 +179,11 @@ function buildDecorations(comments: Comment[]): DecorationSet {
 }
 ```
 
-- [ ] Register the plugin with the Tiptap editor in `Editor.tsx`. The plugin needs to be updated when the comment list changes — use `editor.registerPlugin()` / `editor.unregisterPlugin()` or a reactive Tiptap extension that accepts comment state.
+- [x] Register the plugin with the Tiptap editor in `Editor.tsx`. The plugin needs to be updated when the comment list changes — use `editor.registerPlugin()` / `editor.unregisterPlugin()` or a reactive Tiptap extension that accepts comment state.
 
 ### 4. Add the "Add Comment" selection button
 
-- [ ] Add a floating button that appears when the user selects text:
+- [x] Add a floating button that appears when the user selects text:
   - Use Tiptap's `BubbleMenu` extension or a custom positioned element
   - Only show for Comment/Edit roles
   - On click: capture the selection's `from`/`to` positions, set `pendingAnchor` state, open the sidebar
@@ -201,7 +201,7 @@ function handleAddComment() {
 
 ### 5. Integrate into EditorPage
 
-- [ ] Modify `packages/web/src/EditorPage.tsx`:
+- [x] Modify `packages/web/src/EditorPage.tsx`:
   - Add sidebar open/close state: `const [sidebarOpen, setSidebarOpen] = useState(false)`
   - Add a "Comments" toggle button in the header
   - Call `useComments(docId, wsProvider)` to get comment state and mutation functions
@@ -211,7 +211,7 @@ function handleAddComment() {
 
 ### 6. Add comment-related styles
 
-- [ ] Add to `packages/web/src/editor.css`:
+- [x] Add to `packages/web/src/editor.css`:
 
 ```css
 /* Comment sidebar */
@@ -326,8 +326,8 @@ function handleAddComment() {
 
 ### 8. Build and format check
 
-- [ ] Run `pnpm -F @cadmus/web build` — TypeScript compiles without errors.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/web build` — TypeScript compiles without errors.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
