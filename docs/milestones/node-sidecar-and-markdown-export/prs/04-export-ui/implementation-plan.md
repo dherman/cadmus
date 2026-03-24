@@ -119,13 +119,13 @@ async function handleExport() {
 
 ### 4. Manual verification
 
-- [ ] Start the full dev stack: `pnpm dev`
-- [ ] Create a document and add content with various formatting (headings, bold, lists, code).
-- [ ] Click Export — verify the file downloads with the correct name (`<slug>.md`).
-- [ ] Open the downloaded `.md` file and verify it contains canonical markdown matching the editor content.
-- [ ] Verify the button shows "Exporting…" briefly during the request.
-- [ ] Stop the sidecar (`Ctrl+C` in that terminal) and click Export again — verify an error message appears.
-- [ ] Verify the Export button appears for Read-role users (open the doc as a shared user with read access).
+- [x] Start the full dev stack: `pnpm dev`
+- [x] Create a document and add content with various formatting (headings, bold, lists, code).
+- [x] Click Export — verify the file downloads with the correct name (`<slug>.md`).
+- [x] Open the downloaded `.md` file and verify it contains canonical markdown matching the editor content.
+- [x] Verify the button shows "Exporting…" briefly during the request.
+- [x] Stop the sidecar (`Ctrl+C` in that terminal) and click Export again — verify an error message appears.
+- [x] Verify the Export button appears for Read-role users (open the doc as a shared user with read access).
 
 ### 5. Run tests and check formatting
 
@@ -134,13 +134,13 @@ async function handleExport() {
 
 ## Verification
 
-- [ ] Export button visible in editor header for all role levels (read, comment, edit)
-- [ ] Clicking Export downloads a `.md` file
-- [ ] Downloaded filename is `<document-slug>.md`
-- [ ] Markdown content in downloaded file matches the document as rendered in the editor
-- [ ] Button shows disabled/loading state during export
-- [ ] Error message appears (and disappears on next successful export) when export fails
-- [ ] TypeScript compiles cleanly with no new type errors
+- [x] Export button visible in editor header for all role levels (read, comment, edit)
+- [x] Clicking Export downloads a `.md` file
+- [x] Downloaded filename is `<document-slug>.md`
+- [x] Markdown content in downloaded file matches the document as rendered in the editor
+- [x] Button shows disabled/loading state during export
+- [x] Error message appears (and disappears on next successful export) when export fails
+- [x] TypeScript compiles cleanly with no new type errors
 
 ## Files Modified
 
