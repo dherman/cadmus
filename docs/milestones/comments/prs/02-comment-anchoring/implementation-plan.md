@@ -205,7 +205,7 @@ mod tests {
 
 ### 6. Integration test: anchor survives concurrent edit
 
-- [ ] Manually test: open a document in two tabs, create a comment anchored to a word in the second paragraph. In the first tab, insert a new paragraph above. Refresh the second tab and verify the comment's anchor still points to the correct word.
+- [ ] Manually test: open a document in two tabs, create a comment anchored to a word in the second paragraph. In the first tab, insert a new paragraph above. Refresh the second tab and verify the comment's anchor still points to the correct word. _(Deferred: requires comment UI, which lands in a later PR. The core logic is covered by `test_offset_survives_insert_before` in `anchors.rs`.)_
 
 ### 7. Build and verify
 
