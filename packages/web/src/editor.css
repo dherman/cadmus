@@ -1188,3 +1188,107 @@ body {
 .add-comment-button:hover {
   background: #1d4ed8;
 }
+
+/* Comment thread */
+.comment-thread {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.comment-thread:hover {
+  border-color: #d1d5db;
+}
+
+.comment-thread.active {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 1px #93c5fd;
+}
+
+.comment-thread.resolved {
+  opacity: 0.7;
+}
+
+.comment-thread.resolved:hover {
+  opacity: 1;
+}
+
+.comment-thread-root {
+  padding: 12px;
+}
+
+.comment-thread-replies {
+  border-top: 1px solid #e5e7eb;
+  padding-left: 12px;
+  background: #fafafa;
+}
+
+.comment-thread-replies .comment-reply {
+  padding: 8px 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.comment-thread-replies .comment-reply:first-child {
+  border-top: none;
+}
+
+.comment-thread-actions {
+  padding: 8px 12px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Edited indicator */
+.comment-edited {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+  font-style: italic;
+  margin-left: 2px;
+}
+
+/* Edit button */
+.comment-edit-btn {
+  margin-left: auto;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.comment-edit-btn:hover {
+  color: #374151;
+}
+
+/* Edit form */
+.comment-edit-form {
+  margin-top: 4px;
+}
+
+.comment-edit-textarea {
+  width: 100%;
+  min-height: 40px;
+  resize: vertical;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.comment-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}

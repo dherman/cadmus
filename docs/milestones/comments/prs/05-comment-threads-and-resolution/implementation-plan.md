@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-- [ ] PR 4 (Comment Sidebar UI) is merged — sidebar and basic comment display exist
+- [x] PR 4 (Comment Sidebar UI) is merged — sidebar and basic comment display exist
 
 ## Steps
 
 ### 1. Create the `CommentThread` component
 
-- [ ] Create `packages/web/src/CommentThread.tsx`:
+- [x] Create `packages/web/src/CommentThread.tsx`:
   - Render the root comment with author, relative timestamp, and body
   - Render replies indented below the root, each with author and timestamp
   - Show "(edited)" indicator when `updated_at` is more than 1 second after `created_at`
@@ -32,7 +32,7 @@ interface CommentThreadProps {
 
 ### 2. Add thread grouping logic
 
-- [ ] Add a `groupIntoThreads` utility function (in `CommentSidebar.tsx` or a separate utility):
+- [x] Add a `groupIntoThreads` utility function (in `CommentSidebar.tsx` or a separate utility):
 
 ```typescript
 interface CommentThread {
@@ -63,7 +63,7 @@ function groupIntoThreads(comments: Comment[]): CommentThread[] {
 
 ### 3. Refactor `CommentSidebar` to use threads
 
-- [ ] Update `packages/web/src/CommentSidebar.tsx`:
+- [x] Update `packages/web/src/CommentSidebar.tsx`:
   - Replace flat comment list with `CommentThread` components
   - Split into open threads and resolved threads sections
   - Add a collapsible "Resolved (N)" section at the bottom
@@ -78,27 +78,25 @@ const resolvedThreads = threads.filter((t) => t.root.status === 'resolved');
 
 ### 4. Add resolve/unresolve UI
 
-- [ ] In `CommentThread.tsx`, add action buttons to the thread footer:
+- [x] In `CommentThread.tsx`, add action buttons to the thread footer:
   - "Resolve" button for open threads (calls `onResolve`)
   - "Reopen" button for resolved threads (calls `onUnresolve`)
   - Only visible for users with Comment or Edit role
 
-- [ ] Add optimistic state updates:
-  - On resolve click: immediately move the thread to the resolved section
-  - On API failure: move it back with a brief error message
+- [ ] ~~Add optimistic state updates~~ — deferred to [#34](https://github.com/dherman/cadmus/issues/34)
 
-- [ ] Update the highlight plugin in `Editor.tsx` to exclude resolved comments from decorations.
+- [x] Update the highlight plugin in `Editor.tsx` to exclude resolved comments from decorations.
 
 ### 5. Add comment editing UI
 
-- [ ] In `CommentThread.tsx`, add an edit mode for individual comments:
+- [x] In `CommentThread.tsx`, add an edit mode for individual comments:
   - A "..." menu or "Edit" text button on comments authored by the current user
   - Click toggles the comment body into an editable textarea
   - "Save" and "Cancel" buttons below the textarea
   - Cmd+Enter submits, Escape cancels
   - On save: call `onEdit(commentId, newBody)`, update local state
 
-- [ ] Add the "(edited)" indicator:
+- [x] Add the "(edited)" indicator:
 
 ```typescript
 const isEdited =
@@ -107,13 +105,13 @@ const isEdited =
 
 ### 6. Add comment count badge
 
-- [ ] In `EditorPage.tsx`, compute the open thread count:
+- [x] In `EditorPage.tsx`, compute the open thread count:
 
 ```typescript
 const openCount = comments.filter((c) => c.parent_id === null && c.status === 'open').length;
 ```
 
-- [ ] Render the count in the Comments toggle button:
+- [x] Render the count in the Comments toggle button:
 
 ```tsx
 <button onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -123,7 +121,7 @@ const openCount = comments.filter((c) => c.parent_id === null && c.status === 'o
 
 ### 7. Add keyboard shortcuts
 
-- [ ] In `EditorPage.tsx`, add a keyboard event listener:
+- [x] In `EditorPage.tsx`, add a keyboard event listener:
 
 ```typescript
 useEffect(() => {
@@ -139,11 +137,11 @@ useEffect(() => {
 }, []);
 ```
 
-- [ ] In comment forms (create, reply, edit), handle Cmd+Enter to submit and Escape to cancel.
+- [x] In comment forms (create, reply, edit), handle Cmd+Enter to submit and Escape to cancel.
 
 ### 8. Add thread and resolution styles
 
-- [ ] Add to `packages/web/src/editor.css`:
+- [x] Add to `packages/web/src/editor.css`:
 
 ```css
 /* Thread layout */
@@ -266,40 +264,40 @@ useEffect(() => {
 
 ### 9. Manual verification
 
-- [ ] Start the full dev stack: `pnpm dev`
-- [ ] Create a comment on a text selection. Verify the thread appears in the sidebar.
-- [ ] Reply to the comment. Verify the reply appears indented under the root.
-- [ ] Reply again. Verify replies are ordered chronologically.
-- [ ] Open in a second tab — verify replies appear in real time via WebSocket.
-- [ ] Resolve the thread. Verify it moves to the "Resolved" section and the highlight disappears.
-- [ ] Expand "Resolved" and click "Reopen". Verify it moves back to open and the highlight reappears.
-- [ ] Edit your own comment. Verify the "(edited)" indicator appears.
-- [ ] Verify you cannot see the edit button on another user's comment.
-- [ ] Test Cmd+Shift+M toggles the sidebar.
-- [ ] Test Cmd+Enter submits in comment forms.
-- [ ] Test with a Read-role user — verify they can see threads but cannot reply, resolve, or edit.
-- [ ] Verify the comment count badge in the header updates as comments are created/resolved.
+- [x] Start the full dev stack: `pnpm dev`
+- [x] Create a comment on a text selection. Verify the thread appears in the sidebar.
+- [x] Reply to the comment. Verify the reply appears indented under the root.
+- [x] Reply again. Verify replies are ordered chronologically.
+- [x] Open in a second tab — verify replies appear in real time via WebSocket.
+- [x] Resolve the thread. Verify it moves to the "Resolved" section and the highlight disappears.
+- [x] Expand "Resolved" and click "Reopen". Verify it moves back to open and the highlight reappears.
+- [x] Edit your own comment. Verify the "(edited)" indicator appears.
+- [x] Verify you cannot see the edit button on another user's comment.
+- [x] Test Cmd+Shift+M toggles the sidebar.
+- [x] Test Cmd+Enter submits in comment forms.
+- [x] Test with a Read-role user — verify they can see threads but cannot reply, resolve, or edit.
+- [x] Verify the comment count badge in the header updates as comments are created/resolved.
 
 ### 10. Build and format check
 
-- [ ] Run `pnpm -F @cadmus/web build` — TypeScript compiles without errors.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/web build` — TypeScript compiles without errors.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] Comments are grouped into threads by parent_id
-- [ ] Replies render indented under their parent comment
-- [ ] Reply form opens inline at the bottom of the thread
-- [ ] Resolve moves thread to the "Resolved" section and removes highlight
-- [ ] Unresolve moves thread back to open and restores highlight
-- [ ] Resolved section is collapsible with a count indicator
-- [ ] Comment editing works for the author only
-- [ ] "(edited)" indicator appears on edited comments
-- [ ] Comment count badge updates in real time
-- [ ] Cmd+Shift+M toggles the sidebar
-- [ ] Cmd+Enter submits forms, Escape cancels
-- [ ] All interactions broadcast via WebSocket to other connected clients
-- [ ] Read-role users see threads but cannot interact
+- [x] Comments are grouped into threads by parent_id
+- [x] Replies render indented under their parent comment
+- [x] Reply form opens inline at the bottom of the thread
+- [x] Resolve moves thread to the "Resolved" section and removes highlight
+- [x] Unresolve moves thread back to open and restores highlight
+- [x] Resolved section is collapsible with a count indicator
+- [x] Comment editing works for the author only
+- [x] "(edited)" indicator appears on edited comments
+- [x] Comment count badge updates in real time
+- [x] Cmd+Shift+M toggles the sidebar
+- [x] Cmd+Enter submits forms, Escape cancels
+- [x] All interactions broadcast via WebSocket to other connected clients
+- [x] Read-role users see threads but cannot interact
 
 ## Files Modified
 
