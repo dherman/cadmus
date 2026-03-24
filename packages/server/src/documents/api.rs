@@ -259,7 +259,11 @@ pub struct CommentListQuery {
     pub status: Option<String>,
 }
 
-fn comment_with_author_to_response(row: CommentWithAuthor) -> CommentResponse {
+fn comment_with_author_to_response(
+    row: CommentWithAuthor,
+    anchor_from: Option<u32>,
+    anchor_to: Option<u32>,
+) -> CommentResponse {
     CommentResponse {
         id: row.id,
         document_id: row.document_id,
@@ -269,6 +273,8 @@ fn comment_with_author_to_response(row: CommentWithAuthor) -> CommentResponse {
             email: row.author_email,
         },
         parent_id: row.parent_id,
+        anchor_from,
+        anchor_to,
         body: row.body,
         status: row.status,
         created_at: row.created_at,
@@ -279,6 +285,8 @@ fn comment_with_author_to_response(row: CommentWithAuthor) -> CommentResponse {
 async fn get_comment_response(
     db: &crate::db::Database,
     comment: &super::comments::CommentRow,
+    anchor_from: Option<u32>,
+    anchor_to: Option<u32>,
 ) -> Result<CommentResponse, AppError> {
     let user = db
         .get_user_by_id(comment.author_id)
@@ -294,6 +302,8 @@ async fn get_comment_response(
             email: user.email,
         },
         parent_id: comment.parent_id,
+        anchor_from,
+        anchor_to,
         body: comment.body.clone(),
         status: comment.status.clone(),
         created_at: comment.created_at,
@@ -324,7 +334,39 @@ pub async fn list_comments(
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let comments: Vec<CommentResponse> = rows.into_iter().map(comment_with_author_to_response).collect();
+    // Check if any comment has anchors that need resolving
+    let has_anchors = rows
+        .iter()
+        .any(|r| r.anchor_start.is_some() || r.anchor_end.is_some());
+
+    // Only load the Yrs doc if there are anchors to resolve
+    let comments: Vec<CommentResponse> = if has_anchors {
+        let session = state
+            .document_sessions
+            .get_or_load(id, &state.db, &state.storage)
+            .await?;
+        let awareness = session.awareness.read().await;
+        let doc = awareness.doc();
+
+        rows.into_iter()
+            .map(|row| {
+                let anchor_from = row
+                    .anchor_start
+                    .as_deref()
+                    .and_then(|bytes| super::anchors::sticky_bytes_to_pm_offset(doc, bytes));
+                let anchor_to = row
+                    .anchor_end
+                    .as_deref()
+                    .and_then(|bytes| super::anchors::sticky_bytes_to_pm_offset(doc, bytes));
+                comment_with_author_to_response(row, anchor_from, anchor_to)
+            })
+            .collect()
+    } else {
+        rows.into_iter()
+            .map(|row| comment_with_author_to_response(row, None, None))
+            .collect()
+    };
+
     Ok(Json(comments))
 }
 
@@ -340,14 +382,41 @@ pub async fn create_comment(
         return Err(AppError::BadRequest("Comment body cannot be empty".to_string()));
     }
 
-    // Anchor conversion deferred to PR 2 — store NULL anchors for now
+    // Convert ProseMirror offsets to Yrs StickyIndex binary blobs
+    let (anchor_start, anchor_end, anchor_from_echo, anchor_to_echo) =
+        if let (Some(from), Some(to)) = (body.anchor_from, body.anchor_to) {
+            let session = state
+                .document_sessions
+                .get_or_load(id, &state.db, &state.storage)
+                .await?;
+            // Acquire read lock on awareness to access the Yrs Doc, then
+            // convert offsets. The lock is dropped at the end of the block.
+            let (start, end) = {
+                let awareness = session.awareness.read().await;
+                let doc = awareness.doc();
+                let s = super::anchors::pm_offset_to_sticky_bytes(doc, from as u32)?;
+                let e = super::anchors::pm_offset_to_sticky_bytes(doc, to as u32)?;
+                (s, e)
+            };
+            (Some(start), Some(end), Some(from as u32), Some(to as u32))
+        } else {
+            (None, None, None, None)
+        };
+
     let comment = state
         .db
-        .create_comment(id, auth.user_id, body.body.trim(), None, None)
+        .create_comment(
+            id,
+            auth.user_id,
+            body.body.trim(),
+            anchor_start.as_deref(),
+            anchor_end.as_deref(),
+        )
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let response = get_comment_response(&state.db, &comment).await?;
+    let response =
+        get_comment_response(&state.db, &comment, anchor_from_echo, anchor_to_echo).await?;
     Ok((StatusCode::CREATED, Json(response)))
 }
 
@@ -386,7 +455,7 @@ pub async fn reply_to_comment(
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let response = get_comment_response(&state.db, &reply).await?;
+    let response = get_comment_response(&state.db, &reply, None, None).await?;
     Ok((StatusCode::CREATED, Json(response)))
 }
 
@@ -425,7 +494,7 @@ pub async fn edit_comment(
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let response = get_comment_response(&state.db, &updated).await?;
+    let response = get_comment_response(&state.db, &updated, None, None).await?;
     Ok(Json(response))
 }
 
@@ -459,7 +528,7 @@ pub async fn resolve_comment(
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let response = get_comment_response(&state.db, &updated).await?;
+    let response = get_comment_response(&state.db, &updated, None, None).await?;
     Ok(Json(response))
 }
 
@@ -493,6 +562,6 @@ pub async fn unresolve_comment(
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let response = get_comment_response(&state.db, &updated).await?;
+    let response = get_comment_response(&state.db, &updated, None, None).await?;
     Ok(Json(response))
 }
