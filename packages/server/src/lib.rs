@@ -7,7 +7,7 @@ pub mod sidecar;
 pub mod websocket;
 
 use axum::{
-    routing::{delete, get, patch, post},
+    routing::{delete, get, patch, post, put},
     Json, Router,
 };
 use serde_json::json;
@@ -58,11 +58,23 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         // Comments
         .route(
             "/api/docs/{id}/comments",
-            get(documents::api::list_comments),
+            get(documents::api::list_comments).post(documents::api::create_comment),
         )
         .route(
-            "/api/docs/{id}/comments",
-            post(documents::api::create_comment),
+            "/api/docs/{id}/comments/{comment_id}",
+            put(documents::api::edit_comment),
+        )
+        .route(
+            "/api/docs/{id}/comments/{comment_id}/replies",
+            post(documents::api::reply_to_comment),
+        )
+        .route(
+            "/api/docs/{id}/comments/{comment_id}/resolve",
+            post(documents::api::resolve_comment),
+        )
+        .route(
+            "/api/docs/{id}/comments/{comment_id}/unresolve",
+            post(documents::api::unresolve_comment),
         )
         // Auth endpoints
         .route("/api/auth/register", post(auth::handlers::register))

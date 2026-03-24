@@ -200,6 +200,108 @@ export async function removePermission(docId: string, userId: string): Promise<v
   }
 }
 
+// --- Comments API ---
+
+export interface CommentAuthor {
+  id: string;
+  display_name: string;
+  email: string;
+}
+
+export interface Comment {
+  id: string;
+  document_id: string;
+  author: CommentAuthor;
+  parent_id: string | null;
+  body: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function listComments(
+  docId: string,
+  status?: 'open' | 'resolved' | 'all',
+): Promise<Comment[]> {
+  const params = status ? `?status=${status}` : '';
+  const res = await authFetch(
+    `${API_BASE}/api/docs/${encodeURIComponent(docId)}/comments${params}`,
+  );
+  if (!res.ok) throw new Error('Failed to list comments');
+  return res.json();
+}
+
+export async function createComment(
+  docId: string,
+  body: string,
+  anchorFrom?: number,
+  anchorTo?: number,
+): Promise<Comment> {
+  const res = await authFetch(`${API_BASE}/api/docs/${encodeURIComponent(docId)}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      body,
+      anchor_from: anchorFrom,
+      anchor_to: anchorTo,
+    }),
+  });
+  if (!res.ok) throw new Error('Failed to create comment');
+  return res.json();
+}
+
+export async function replyToComment(
+  docId: string,
+  commentId: string,
+  body: string,
+): Promise<Comment> {
+  const res = await authFetch(
+    `${API_BASE}/api/docs/${encodeURIComponent(docId)}/comments/${encodeURIComponent(commentId)}/replies`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    },
+  );
+  if (!res.ok) throw new Error('Failed to reply to comment');
+  return res.json();
+}
+
+export async function editComment(
+  docId: string,
+  commentId: string,
+  body: string,
+): Promise<Comment> {
+  const res = await authFetch(
+    `${API_BASE}/api/docs/${encodeURIComponent(docId)}/comments/${encodeURIComponent(commentId)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    },
+  );
+  if (!res.ok) throw new Error('Failed to edit comment');
+  return res.json();
+}
+
+export async function resolveComment(docId: string, commentId: string): Promise<Comment> {
+  const res = await authFetch(
+    `${API_BASE}/api/docs/${encodeURIComponent(docId)}/comments/${encodeURIComponent(commentId)}/resolve`,
+    { method: 'POST' },
+  );
+  if (!res.ok) throw new Error('Failed to resolve comment');
+  return res.json();
+}
+
+export async function unresolveComment(docId: string, commentId: string): Promise<Comment> {
+  const res = await authFetch(
+    `${API_BASE}/api/docs/${encodeURIComponent(docId)}/comments/${encodeURIComponent(commentId)}/unresolve`,
+    { method: 'POST' },
+  );
+  if (!res.ok) throw new Error('Failed to unresolve comment');
+  return res.json();
+}
+
 // --- Document Content API ---
 
 export interface DocumentContent {

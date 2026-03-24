@@ -9,7 +9,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::auth::middleware::AuthUser;
-use crate::db::{DocumentRow, DocumentWithRole};
+use crate::db::{CommentWithAuthor, DocumentRow, DocumentWithRole};
 use crate::documents::permissions::{require_owner, require_permission, Permission};
 use crate::errors::AppError;
 use crate::AppState;
@@ -248,23 +248,251 @@ pub async fn push_content(
     Err(AppError::Internal("Not yet implemented".to_string()))
 }
 
+// --- Comment types ---
+
+use super::comments::{
+    CommentAuthor, CommentResponse, CreateCommentRequest, CreateReplyRequest, EditCommentRequest,
+};
+
+#[derive(Deserialize)]
+pub struct CommentListQuery {
+    pub status: Option<String>,
+}
+
+fn comment_with_author_to_response(row: CommentWithAuthor) -> CommentResponse {
+    CommentResponse {
+        id: row.id,
+        document_id: row.document_id,
+        author: CommentAuthor {
+            id: row.author_id,
+            display_name: row.author_display_name,
+            email: row.author_email,
+        },
+        parent_id: row.parent_id,
+        body: row.body,
+        status: row.status,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    }
+}
+
+async fn get_comment_response(
+    db: &crate::db::Database,
+    comment: &super::comments::CommentRow,
+) -> Result<CommentResponse, AppError> {
+    let user = db
+        .get_user_by_id(comment.author_id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::Internal("Comment author not found".to_string()))?;
+    Ok(CommentResponse {
+        id: comment.id,
+        document_id: comment.document_id,
+        author: CommentAuthor {
+            id: user.id,
+            display_name: user.display_name,
+            email: user.email,
+        },
+        parent_id: comment.parent_id,
+        body: comment.body.clone(),
+        status: comment.status.clone(),
+        created_at: comment.created_at,
+        updated_at: comment.updated_at,
+    })
+}
+
+// --- Comment handlers ---
+
 pub async fn list_comments(
     auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
-) -> Result<Json<Vec<serde_json::Value>>, AppError> {
+    Query(query): Query<CommentListQuery>,
+) -> Result<Json<Vec<CommentResponse>>, AppError> {
     require_permission(&state.db, auth.user_id, id, Permission::Read).await?;
-    // TODO: Query comments for this document
-    Ok(Json(vec![]))
+
+    let status_filter = match query.status.as_deref() {
+        Some("all") | None => None,
+        Some("open") => Some("open"),
+        Some("resolved") => Some("resolved"),
+        Some(_) => return Err(AppError::BadRequest("Invalid status filter".to_string())),
+    };
+
+    let rows = state
+        .db
+        .list_comments(id, status_filter)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let comments: Vec<CommentResponse> = rows.into_iter().map(comment_with_author_to_response).collect();
+    Ok(Json(comments))
 }
 
 pub async fn create_comment(
     auth: AuthUser,
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
-    Json(_body): Json<serde_json::Value>,
-) -> Result<Json<serde_json::Value>, AppError> {
+    Json(body): Json<CreateCommentRequest>,
+) -> Result<(StatusCode, Json<CommentResponse>), AppError> {
     require_permission(&state.db, auth.user_id, id, Permission::Comment).await?;
-    // TODO: Create comment, convert offsets to RelativePositions, broadcast event
-    Err(AppError::Internal("Not yet implemented".to_string()))
+
+    if body.body.trim().is_empty() {
+        return Err(AppError::BadRequest("Comment body cannot be empty".to_string()));
+    }
+
+    // Anchor conversion deferred to PR 2 — store NULL anchors for now
+    let comment = state
+        .db
+        .create_comment(id, auth.user_id, body.body.trim(), None, None)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let response = get_comment_response(&state.db, &comment).await?;
+    Ok((StatusCode::CREATED, Json(response)))
+}
+
+pub async fn reply_to_comment(
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+    Path((doc_id, comment_id)): Path<(Uuid, Uuid)>,
+    Json(body): Json<CreateReplyRequest>,
+) -> Result<(StatusCode, Json<CommentResponse>), AppError> {
+    require_permission(&state.db, auth.user_id, doc_id, Permission::Comment).await?;
+
+    if body.body.trim().is_empty() {
+        return Err(AppError::BadRequest("Reply body cannot be empty".to_string()));
+    }
+
+    let parent = state
+        .db
+        .get_comment(comment_id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Comment not found".to_string()))?;
+
+    if parent.document_id != doc_id {
+        return Err(AppError::NotFound("Comment not found".to_string()));
+    }
+
+    if parent.parent_id.is_some() {
+        return Err(AppError::BadRequest(
+            "Cannot reply to a reply — only top-level comments can have replies".to_string(),
+        ));
+    }
+
+    let reply = state
+        .db
+        .create_reply(doc_id, auth.user_id, comment_id, body.body.trim())
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let response = get_comment_response(&state.db, &reply).await?;
+    Ok((StatusCode::CREATED, Json(response)))
+}
+
+pub async fn edit_comment(
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+    Path((doc_id, comment_id)): Path<(Uuid, Uuid)>,
+    Json(body): Json<EditCommentRequest>,
+) -> Result<Json<CommentResponse>, AppError> {
+    require_permission(&state.db, auth.user_id, doc_id, Permission::Comment).await?;
+
+    if body.body.trim().is_empty() {
+        return Err(AppError::BadRequest("Comment body cannot be empty".to_string()));
+    }
+
+    let comment = state
+        .db
+        .get_comment(comment_id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Comment not found".to_string()))?;
+
+    if comment.document_id != doc_id {
+        return Err(AppError::NotFound("Comment not found".to_string()));
+    }
+
+    if comment.author_id != auth.user_id {
+        return Err(AppError::Forbidden(
+            "Only the comment author can edit this comment".to_string(),
+        ));
+    }
+
+    let updated = state
+        .db
+        .update_comment_body(comment_id, body.body.trim())
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let response = get_comment_response(&state.db, &updated).await?;
+    Ok(Json(response))
+}
+
+pub async fn resolve_comment(
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+    Path((doc_id, comment_id)): Path<(Uuid, Uuid)>,
+) -> Result<Json<CommentResponse>, AppError> {
+    require_permission(&state.db, auth.user_id, doc_id, Permission::Comment).await?;
+
+    let comment = state
+        .db
+        .get_comment(comment_id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Comment not found".to_string()))?;
+
+    if comment.document_id != doc_id {
+        return Err(AppError::NotFound("Comment not found".to_string()));
+    }
+
+    if comment.parent_id.is_some() {
+        return Err(AppError::BadRequest(
+            "Only top-level comments can be resolved".to_string(),
+        ));
+    }
+
+    let updated = state
+        .db
+        .update_comment_status(comment_id, "resolved")
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let response = get_comment_response(&state.db, &updated).await?;
+    Ok(Json(response))
+}
+
+pub async fn unresolve_comment(
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+    Path((doc_id, comment_id)): Path<(Uuid, Uuid)>,
+) -> Result<Json<CommentResponse>, AppError> {
+    require_permission(&state.db, auth.user_id, doc_id, Permission::Comment).await?;
+
+    let comment = state
+        .db
+        .get_comment(comment_id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Comment not found".to_string()))?;
+
+    if comment.document_id != doc_id {
+        return Err(AppError::NotFound("Comment not found".to_string()));
+    }
+
+    if comment.parent_id.is_some() {
+        return Err(AppError::BadRequest(
+            "Only top-level comments can be unresolved".to_string(),
+        ));
+    }
+
+    let updated = state
+        .db
+        .update_comment_status(comment_id, "open")
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let response = get_comment_response(&state.db, &updated).await?;
+    Ok(Json(response))
 }
