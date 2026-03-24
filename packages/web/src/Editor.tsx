@@ -6,10 +6,7 @@ import { CollaborationCursor } from './collaboration-cursor-extension';
 import { createExtensions } from '@cadmus/doc-schema';
 import { getUserIdentity } from './user-identity';
 import { Toolbar } from './Toolbar';
-import {
-  CommentHighlightExtension,
-  COMMENT_HIGHLIGHT_META,
-} from './comment-highlight-plugin';
+import { CommentHighlightExtension, COMMENT_HIGHLIGHT_META } from './comment-highlight-plugin';
 import type * as Y from 'yjs';
 import type { WebsocketProvider } from 'y-websocket';
 import type { UserProfile, Comment } from './api';
