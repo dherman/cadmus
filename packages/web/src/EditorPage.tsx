@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Editor } from './Editor';
 import { Presence } from './Presence';
 import { ShareDialog } from './ShareDialog';
+import { CommentSidebar } from './CommentSidebar';
 import { useCollaboration } from './useCollaboration';
+import { useComments } from './useComments';
 import { useAuth } from './auth/AuthContext';
 import { getDocument, fetchDocumentContent, DocumentSummary } from './api';
 
@@ -133,7 +135,21 @@ function EditorPageInner({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
+  // Comment state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+  const [pendingAnchor, setPendingAnchor] = useState<{ from: number; to: number } | null>(null);
+
+  const {
+    comments,
+    createComment: handleCreateComment,
+    replyToComment: handleReply,
+    resolveComment: handleResolve,
+    unresolveComment: handleUnresolve,
+  } = useComments(docId, provider);
+
   const isEditable = doc.role === 'edit';
+  const canComment = doc.role === 'comment' || doc.role === 'edit';
 
   async function handleExport() {
     setExporting(true);
@@ -152,31 +168,50 @@ function EditorPageInner({
     }
   }
 
-  // Handle ws-token expiry (close code 4401)
+  // Handle ws-token expiry: the ws-token has a short TTL (30s) and is only
+  // used for the initial WebSocket handshake. When y-websocket reconnects
+  // (after a disconnect), it reuses the same URL — which contains the expired
+  // token. We listen for 'status' events on the provider and refresh the
+  // token in the URL before each reconnection attempt.
   useEffect(() => {
     if (!provider) return;
 
-    const ws = provider.ws;
-    if (!ws) return;
-
-    const handleClose = async (event: CloseEvent) => {
-      if (event.code === 4401) {
+    const onStatus = async ({ status }: { status: string }) => {
+      if (status === 'disconnected') {
         try {
           const newToken = await getWsToken();
-          (provider as unknown as { url: string }).url =
-            `${provider.url.split('?')[0]}?token=${encodeURIComponent(newToken)}`;
-          provider.connect();
+          // Update the params object so the next reconnection URL includes the
+          // fresh token. y-websocket reads `this.params` in its `url` getter.
+          (provider as unknown as { params: Record<string, string> }).params.token = newToken;
         } catch {
-          // If we can't get a new token, the user will see disconnected status
+          // If we can't get a new token, y-websocket will retry and fail
         }
       }
     };
 
-    ws.addEventListener('close', handleClose);
+    provider.on('status', onStatus);
     return () => {
-      ws.removeEventListener('close', handleClose);
+      provider.off('status', onStatus);
     };
   }, [provider, getWsToken]);
+
+  const handleAddComment = useCallback((from: number, to: number) => {
+    setPendingAnchor({ from, to });
+    setSidebarOpen(true);
+  }, []);
+
+  const handleHighlightClick = useCallback((commentId: string) => {
+    setActiveCommentId(commentId);
+    setSidebarOpen(true);
+  }, []);
+
+  const handleCommentClick = useCallback((commentId: string) => {
+    setActiveCommentId(commentId);
+  }, []);
+
+  const handleCancelCreate = useCallback(() => {
+    setPendingAnchor(null);
+  }, []);
 
   return (
     <div className="app">
@@ -195,13 +230,46 @@ function EditorPageInner({
         <button className="btn-export" onClick={handleExport} disabled={exporting}>
           {exporting ? 'Exporting\u2026' : 'Export'}
         </button>
+        <button
+          className={`btn-comments${sidebarOpen ? ' active' : ''}`}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          Comments
+        </button>
         {exportError && <span className="export-error">{exportError}</span>}
       </header>
-      <main className="app-main">
-        {ydoc && provider && (
-          <Editor ydoc={ydoc} provider={provider} user={user} editable={isEditable} />
+      <div className="editor-with-sidebar">
+        <main className="app-main">
+          {ydoc && provider && (
+            <Editor
+              ydoc={ydoc}
+              provider={provider}
+              user={user}
+              editable={isEditable}
+              canComment={canComment}
+              comments={comments}
+              activeCommentId={activeCommentId}
+              onAddComment={handleAddComment}
+              onHighlightClick={handleHighlightClick}
+            />
+          )}
+        </main>
+        {sidebarOpen && (
+          <CommentSidebar
+            comments={comments}
+            onCreateComment={handleCreateComment}
+            onReply={handleReply}
+            onResolve={handleResolve}
+            onUnresolve={handleUnresolve}
+            activeCommentId={activeCommentId}
+            onCommentClick={handleCommentClick}
+            pendingAnchor={pendingAnchor}
+            onCancelCreate={handleCancelCreate}
+            onClose={() => setSidebarOpen(false)}
+            canComment={canComment}
+          />
         )}
-      </main>
+      </div>
 
       {showShareDialog && (
         <ShareDialog docId={docId} docTitle={doc.title} onClose={() => setShowShareDialog(false)} />
