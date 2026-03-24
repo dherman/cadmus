@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-- [ ] PR 2 (Content Push Endpoint) is merged
+- [x] PR 2 (Content Push Endpoint) is merged
 
 ## Steps
 
 ### 1. Create the step_translator module
 
-- [ ] Create `packages/server/src/documents/step_translator.rs` with the module structure:
+- [x] Create `packages/server/src/documents/step_translator.rs` with the module structure:
 
 ```rust
 use serde_json::Value;
@@ -39,11 +39,11 @@ pub enum TranslationError {
 }
 ```
 
-- [ ] Add `pub mod step_translator;` to `packages/server/src/documents/mod.rs`.
+- [x] Add `pub mod step_translator;` to `packages/server/src/documents/mod.rs`.
 
 ### 2. Implement position mapping
 
-- [ ] Add `PositionMapper` to the step_translator module:
+- [x] Add `PositionMapper` to the step_translator module:
 
 ```rust
 struct PositionMapper {
@@ -76,12 +76,12 @@ impl PositionMapper {
 }
 ```
 
-- [ ] Test position mapping with a simple document:
+- [x] Test position mapping with a simple document:
   - `<doc><paragraph>Hello</paragraph></doc>` → position 0 is before doc, 1 is start of paragraph, 2 is 'H', 6 is 'o', 7 is end of paragraph, 8 is end of doc.
 
 ### 3. Implement ReplaceStep translation
 
-- [ ] Implement `apply_replace_step`:
+- [x] Implement `apply_replace_step`:
 
 ```rust
 fn apply_replace_step(&mut self, step: &Value) -> Result<(), TranslationError> {
@@ -108,14 +108,14 @@ fn apply_replace_step(&mut self, step: &Value) -> Result<(), TranslationError> {
 }
 ```
 
-- [ ] Implement helper methods:
+- [x] Implement helper methods:
   - `delete_range(range: &YrsRange)` — removes content between two Yrs positions.
   - `insert_content(pos: &YrsPosition, nodes: &Value)` — inserts ProseMirror node JSON as Yrs XML elements.
   - `insert_text(text_ref: &XmlTextRef, offset: u32, text: &str, marks: &[Value])` — inserts text with formatting.
 
 ### 4. Implement AddMarkStep / RemoveMarkStep translation
 
-- [ ] Implement `apply_add_mark_step` and `apply_remove_mark_step`:
+- [x] Implement `apply_add_mark_step` and `apply_remove_mark_step`:
 
 ```rust
 fn apply_add_mark_step(&mut self, step: &Value) -> Result<(), TranslationError> {
@@ -133,7 +133,7 @@ fn apply_add_mark_step(&mut self, step: &Value) -> Result<(), TranslationError> 
 }
 ```
 
-- [ ] Mark types map to Yrs formatting attributes:
+- [x] Mark types map to Yrs formatting attributes:
   - `bold` → `{ "bold": true }`
   - `italic` → `{ "italic": true }`
   - `code` → `{ "code": true }`
@@ -142,7 +142,7 @@ fn apply_add_mark_step(&mut self, step: &Value) -> Result<(), TranslationError> 
 
 ### 5. Implement ReplaceAroundStep translation
 
-- [ ] Implement `apply_replace_around_step`:
+- [x] Implement `apply_replace_around_step`:
 
 ```rust
 fn apply_replace_around_step(&mut self, step: &Value) -> Result<(), TranslationError> {
@@ -166,7 +166,7 @@ fn apply_replace_around_step(&mut self, step: &Value) -> Result<(), TranslationE
 
 ### 6. Implement AttrStep translation
 
-- [ ] Implement `apply_attr_step`:
+- [x] Implement `apply_attr_step`:
 
 ```rust
 fn apply_attr_step(&mut self, step: &Value) -> Result<(), TranslationError> {
@@ -185,7 +185,7 @@ fn apply_attr_step(&mut self, step: &Value) -> Result<(), TranslationError> {
 
 ### 7. Implement the top-level apply_steps method
 
-- [ ] Wire all step handlers together:
+- [x] Wire all step handlers together:
 
 ```rust
 impl<'a> StepTranslator<'a> {
@@ -228,7 +228,7 @@ impl<'a> StepTranslator<'a> {
 
 ### 8. Integrate with push_content handler
 
-- [ ] In `packages/server/src/documents/api.rs`, replace the full-document-replace call with Step translation:
+- [x] In `packages/server/src/documents/api.rs`, replace the full-document-replace call with Step translation:
 
 ```rust
 // Replace:
@@ -238,11 +238,11 @@ let mut translator = StepTranslator::new(&session.doc);
 let result = translator.apply_steps(&steps.steps)?;
 ```
 
-- [ ] Update the change summary to include `steps_failed` if any Steps failed translation.
+- [x] Update the change summary to include `steps_failed` if any Steps failed translation.
 
 ### 9. Write unit tests for position mapping
 
-- [ ] Create test file or add tests to `step_translator.rs`:
+- [x] Create test file or add tests to `step_translator.rs`:
 
 ```rust
 #[cfg(test)]
@@ -266,7 +266,7 @@ mod tests {
 
 ### 10. Write unit tests for each step type
 
-- [ ] Test ReplaceStep:
+- [x] Test ReplaceStep:
   - Insert text at beginning of paragraph
   - Insert text in middle of paragraph
   - Delete text range
@@ -274,22 +274,22 @@ mod tests {
   - Insert a new paragraph between existing ones
   - Delete an entire paragraph
 
-- [ ] Test AddMarkStep/RemoveMarkStep:
+- [x] Test AddMarkStep/RemoveMarkStep:
   - Add bold to a text range
   - Remove italic from a text range
   - Add a link mark with attributes
 
-- [ ] Test AttrStep:
+- [x] Test AttrStep:
   - Change heading level (1 → 2)
   - Change code block language
 
-- [ ] Test ReplaceAroundStep:
+- [x] Test ReplaceAroundStep:
   - Wrap paragraphs in blockquote
   - Unwrap blockquote
 
 ### 11. Write integration tests
 
-- [ ] Create round-trip integration tests that:
+- [x] Create round-trip integration tests that:
   1. Start with a known markdown document.
   2. Parse it via the sidecar → `old_doc`.
   3. Create a modified version → `new_doc`.
@@ -299,30 +299,30 @@ mod tests {
 
 Test cases:
 
-- [ ] Add a paragraph to the end
-- [ ] Modify text in the middle
-- [ ] Delete a section
-- [ ] Change formatting (add bold, remove italic)
-- [ ] Change heading levels
-- [ ] Restructure lists (add items, change nesting)
-- [ ] Mixed changes (add + delete + reformat in one push)
+- [x] Add a paragraph to the end
+- [x] Modify text in the middle
+- [x] Delete a section
+- [x] Change formatting (add bold, remove italic)
+- [x] Change heading levels
+- [x] Restructure lists (add items, change nesting)
+- [x] Mixed changes (add + delete + reformat in one push)
 
 ### 12. Build and format check
 
-- [ ] Run `cargo build` in `packages/server/` — compiles without errors.
-- [ ] Run `cargo test` in `packages/server/` — all tests pass.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `cargo build` in `packages/server/` — compiles without errors.
+- [x] Run `cargo test` in `packages/server/` — all tests pass.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] All Step types translate correctly in isolation (unit tests pass)
-- [ ] Position mapping handles nested structures (lists, blockquotes)
-- [ ] Round-trip tests pass (parse → diff → translate → extract = expected)
-- [ ] Push endpoint uses Step translation instead of full replace
-- [ ] Concurrent edits merge: push changes to paragraph 3 while browser edited paragraph 1 → both changes preserved
-- [ ] Multiple Steps in sequence apply correctly (positions shift after each step)
-- [ ] Large documents (50+ paragraphs) translate without errors
-- [ ] Failed Step translation doesn't crash — logs warning and continues
+- [x] All Step types translate correctly in isolation (unit tests pass)
+- [x] Position mapping handles nested structures (lists, blockquotes)
+- [x] Round-trip tests pass (parse → diff → translate → extract = expected)
+- [x] Push endpoint uses Step translation instead of full replace
+- [x] Concurrent edits merge: push changes to paragraph 3 while browser edited paragraph 1 → both changes preserved
+- [x] Multiple Steps in sequence apply correctly (positions shift after each step)
+- [x] Large documents (50+ paragraphs) translate without errors
+- [x] Failed Step translation doesn't crash — logs warning and continues
 
 ## Files Modified
 
