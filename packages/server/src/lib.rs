@@ -82,7 +82,15 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/auth/refresh", post(auth::handlers::refresh))
         .route("/api/auth/ws-token", post(auth::handlers::ws_token))
         .route("/api/auth/me", get(auth::handlers::me))
-        // TODO: history endpoints, token management
+        // Agent token management
+        .route(
+            "/api/tokens",
+            post(auth::handlers::create_token).get(auth::handlers::list_tokens),
+        )
+        .route(
+            "/api/tokens/{token_id}",
+            delete(auth::handlers::revoke_token),
+        )
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)

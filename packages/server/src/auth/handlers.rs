@@ -1,11 +1,13 @@
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
 use super::middleware::AuthUser;
+use super::tokens;
 use crate::auth::{jwt, password};
 use crate::errors::AppError;
 use crate::AppState;
@@ -219,4 +221,105 @@ pub async fn me(auth: AuthUser) -> Json<UserProfile> {
         email: auth.email,
         display_name: auth.display_name,
     })
+}
+
+// ── Agent token handlers ──
+
+pub async fn create_token(
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<tokens::CreateAgentTokenRequest>,
+) -> Result<(StatusCode, Json<tokens::AgentTokenCreatedResponse>), AppError> {
+    // Validate name
+    let name = body.name.trim().to_string();
+    if name.is_empty() || name.len() > 255 {
+        return Err(AppError::BadRequest(
+            "Token name must be between 1 and 255 characters".into(),
+        ));
+    }
+
+    // Validate scopes
+    tokens::validate_scopes(&body.scopes)?;
+
+    // Validate expires_in
+    let duration = tokens::parse_expires_in(&body.expires_in)?;
+    let expires_at = Utc::now() + duration;
+
+    // Validate document_ids if provided
+    if let Some(ref doc_ids) = body.document_ids {
+        for doc_id in doc_ids {
+            // Check user has access to this document
+            state
+                .db
+                .get_user_permission(*doc_id, auth.user_id)
+                .await
+                .map_err(|e| AppError::Internal(e.to_string()))?
+                .ok_or_else(|| {
+                    AppError::Forbidden(format!(
+                        "You don't have access to document {}",
+                        doc_id
+                    ))
+                })?;
+        }
+    }
+
+    // Generate token
+    let (raw_secret, token_hash) = tokens::generate_agent_token();
+
+    // Store in DB
+    let row = state
+        .db
+        .create_agent_token(
+            auth.user_id,
+            &name,
+            &token_hash,
+            &body.scopes,
+            body.document_ids.as_deref(),
+            expires_at,
+        )
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(tokens::AgentTokenCreatedResponse {
+            token_id: row.id,
+            secret: raw_secret,
+            name: row.name,
+            scopes: row.scopes,
+            expires_at: row.expires_at,
+        }),
+    ))
+}
+
+pub async fn list_tokens(
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<tokens::AgentTokenResponse>>, AppError> {
+    let rows = state
+        .db
+        .list_agent_tokens(auth.user_id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let tokens: Vec<tokens::AgentTokenResponse> = rows.into_iter().map(Into::into).collect();
+    Ok(Json(tokens))
+}
+
+pub async fn revoke_token(
+    auth: AuthUser,
+    State(state): State<Arc<AppState>>,
+    Path(token_id): Path<Uuid>,
+) -> Result<StatusCode, AppError> {
+    let found = state
+        .db
+        .revoke_agent_token(token_id, auth.user_id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    if !found {
+        return Err(AppError::NotFound("Token not found".into()));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }

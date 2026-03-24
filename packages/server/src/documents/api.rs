@@ -9,6 +9,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::auth::middleware::AuthUser;
+use crate::auth::tokens::{check_document_restriction, require_scope};
 use crate::db::{CommentWithAuthor, DocumentRow, DocumentWithRole};
 use crate::documents::permissions::{require_owner, require_permission, Permission};
 use crate::errors::AppError;
@@ -80,12 +81,20 @@ pub async fn list_documents(
     auth: AuthUser,
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<DocumentSummary>>, AppError> {
+    require_scope(&auth.token_scopes, "docs:read")?;
+
     let rows = state
         .db
         .list_accessible_documents_with_role(auth.user_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    let docs: Vec<DocumentSummary> = rows.into_iter().map(Into::into).collect();
+
+    // Filter by document_ids restriction if agent token has one
+    let docs: Vec<DocumentSummary> = rows
+        .into_iter()
+        .filter(|row| check_document_restriction(&auth.token_document_ids, row.id).is_ok())
+        .map(Into::into)
+        .collect();
     Ok(Json(docs))
 }
 
@@ -94,6 +103,8 @@ pub async fn create_document(
     State(state): State<Arc<AppState>>,
     Json(body): Json<CreateDocumentRequest>,
 ) -> Result<(StatusCode, Json<DocumentSummary>), AppError> {
+    require_scope(&auth.token_scopes, "docs:write")?;
+
     if body.title.trim().is_empty() {
         return Err(AppError::BadRequest("Title is required".to_string()));
     }
@@ -120,6 +131,9 @@ pub async fn get_document(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<DocumentSummary>, AppError> {
+    require_scope(&auth.token_scopes, "docs:read")?;
+    check_document_restriction(&auth.token_document_ids, id)?;
+
     let row = state
         .db
         .get_document_with_role(id, auth.user_id)
@@ -135,6 +149,8 @@ pub async fn delete_document(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode, AppError> {
+    require_scope(&auth.token_scopes, "docs:write")?;
+    check_document_restriction(&auth.token_document_ids, id)?;
     require_owner(&state.db, auth.user_id, id).await?;
 
     let doc = state
@@ -172,6 +188,8 @@ pub async fn update_document(
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateDocumentRequest>,
 ) -> Result<Json<DocumentSummary>, AppError> {
+    require_scope(&auth.token_scopes, "docs:write")?;
+    check_document_restriction(&auth.token_document_ids, id)?;
     require_permission(&state.db, auth.user_id, id, Permission::Edit).await?;
     let title = body
         .title
@@ -194,6 +212,8 @@ pub async fn get_content(
     Path(id): Path<Uuid>,
     Query(query): Query<ContentQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    require_scope(&auth.token_scopes, "docs:read")?;
+    check_document_restriction(&auth.token_document_ids, id)?;
     require_permission(&state.db, auth.user_id, id, Permission::Read).await?;
 
     let format = query.format.as_deref().unwrap_or("json");
@@ -242,6 +262,8 @@ pub async fn push_content(
     Path(id): Path<Uuid>,
     Json(_body): Json<PushContentRequest>,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    require_scope(&auth.token_scopes, "docs:write")?;
+    check_document_restriction(&auth.token_document_ids, id)?;
     require_permission(&_state.db, auth.user_id, id, Permission::Edit).await?;
     // TODO: Parse pushed markdown via sidecar, diff against base version,
     // translate Steps to Yrs operations, apply to live document
@@ -320,6 +342,8 @@ pub async fn list_comments(
     Path(id): Path<Uuid>,
     Query(query): Query<CommentListQuery>,
 ) -> Result<Json<Vec<CommentResponse>>, AppError> {
+    require_scope(&auth.token_scopes, "comments:read")?;
+    check_document_restriction(&auth.token_document_ids, id)?;
     require_permission(&state.db, auth.user_id, id, Permission::Read).await?;
 
     let status_filter = match query.status.as_deref() {
@@ -377,6 +401,8 @@ pub async fn create_comment(
     Path(id): Path<Uuid>,
     Json(body): Json<CreateCommentRequest>,
 ) -> Result<(StatusCode, Json<CommentResponse>), AppError> {
+    require_scope(&auth.token_scopes, "comments:write")?;
+    check_document_restriction(&auth.token_document_ids, id)?;
     require_permission(&state.db, auth.user_id, id, Permission::Comment).await?;
 
     if body.body.trim().is_empty() {
@@ -435,6 +461,8 @@ pub async fn reply_to_comment(
     Path((doc_id, comment_id)): Path<(Uuid, Uuid)>,
     Json(body): Json<CreateReplyRequest>,
 ) -> Result<(StatusCode, Json<CommentResponse>), AppError> {
+    require_scope(&auth.token_scopes, "comments:write")?;
+    check_document_restriction(&auth.token_document_ids, doc_id)?;
     require_permission(&state.db, auth.user_id, doc_id, Permission::Comment).await?;
 
     if body.body.trim().is_empty() {
@@ -482,6 +510,8 @@ pub async fn edit_comment(
     Path((doc_id, comment_id)): Path<(Uuid, Uuid)>,
     Json(body): Json<EditCommentRequest>,
 ) -> Result<Json<CommentResponse>, AppError> {
+    require_scope(&auth.token_scopes, "comments:write")?;
+    check_document_restriction(&auth.token_document_ids, doc_id)?;
     require_permission(&state.db, auth.user_id, doc_id, Permission::Comment).await?;
 
     if body.body.trim().is_empty() {
@@ -528,6 +558,8 @@ pub async fn resolve_comment(
     State(state): State<Arc<AppState>>,
     Path((doc_id, comment_id)): Path<(Uuid, Uuid)>,
 ) -> Result<Json<CommentResponse>, AppError> {
+    require_scope(&auth.token_scopes, "comments:write")?;
+    check_document_restriction(&auth.token_document_ids, doc_id)?;
     require_permission(&state.db, auth.user_id, doc_id, Permission::Comment).await?;
 
     let comment = state
@@ -570,6 +602,8 @@ pub async fn unresolve_comment(
     State(state): State<Arc<AppState>>,
     Path((doc_id, comment_id)): Path<(Uuid, Uuid)>,
 ) -> Result<Json<CommentResponse>, AppError> {
+    require_scope(&auth.token_scopes, "comments:write")?;
+    check_document_restriction(&auth.token_document_ids, doc_id)?;
     require_permission(&state.db, auth.user_id, doc_id, Permission::Comment).await?;
 
     let comment = state
