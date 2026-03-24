@@ -11,7 +11,7 @@ Total estimated time: 12–18 weeks for a small team (1–2 developers).
 - [x] Milestone 1: Collaborative Editing Core
 - [x] Milestone 2: Persistence and Document Management
 - [x] Milestone 3: Auth and Permissions
-- [ ] Milestone 4: Node Sidecar and Markdown Export
+- [x] Milestone 4: Node Sidecar and Markdown Export
 - [ ] Milestone 5: Comments
 - [ ] Milestone 6: Agent API and CLI
 - [ ] Milestone 7: Enterprise Foundations
