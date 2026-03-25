@@ -234,8 +234,8 @@ pnpm dev -- push <doc-id> ./test-doc.md
 
 - [x] Verify the browser shows the updated content.
 - [x] Verify `.cadmus/<doc-id>.json` has the new version.
-- [ ] Edit and push again (sequential push cycle).
-- [ ] Verify the second push uses the updated base_version.
+- [x] Edit and push again (sequential push cycle).
+- [x] Verify the second push uses the updated base_version.
 
 ### 9. Test concurrent edit scenarios
 
@@ -255,7 +255,7 @@ pnpm dev -- push <doc-id> ./test-doc.md
 - [x] Push response shows version and change summary
 - [x] `--dry-run` shows colored unified diff without applying
 - [x] `.cadmus/<doc-id>.json` is updated with new version after push
-- [ ] Sequential push cycles work (push → edit → push)
+- [x] Sequential push cycles work (push → edit → push)
 - [ ] Missing checkout metadata shows helpful error
 - [ ] Missing file shows helpful error
 - [ ] Stale base_version shows helpful re-checkout suggestion
