@@ -326,17 +326,27 @@ pub async fn push_content(
             AppError::UnprocessableEntity(format!("Failed to parse markdown: {}", e))
         })?;
 
-    // 6. Compute diff via sidecar
+    // 6. Extract the current CRDT state as ProseMirror JSON
+    let current_doc = {
+        let awareness = session.awareness.read().await;
+        let yrs_doc = awareness.doc();
+        super::yrs_json::extract_prosemirror_json(yrs_doc)
+            .unwrap_or_else(|_| super::yrs_json::empty_doc_json())
+    };
+
+    // 7. Three-way merge: base (checkout) + current (live CRDT) + new (pushed)
+    //    Returns steps relative to the current CRDT state, so concurrent
+    //    browser edits are preserved and CLI changes are rebased on top.
     let steps = state
         .sidecar
-        .diff(base_doc.clone(), new_doc.clone())
+        .merge(base_doc.clone(), current_doc, new_doc.clone())
         .await
-        .map_err(|e| AppError::BadGateway(format!("Diff service error: {}", e)))?;
+        .map_err(|e| AppError::BadGateway(format!("Merge service error: {}", e)))?;
 
-    // 7. Build change summary
+    // 8. Build change summary
     let summary = compute_change_summary(&steps);
 
-    // 8. If dry run, generate markdown diff and return preview
+    // 9. If dry run, generate markdown diff and return preview
     if params.dry_run.unwrap_or(false) {
         let base_markdown = state
             .sidecar
@@ -351,14 +361,14 @@ pub async fn push_content(
         })));
     }
 
-    // 9. Apply changes via Step translation (surgical CRDT operations)
+    // 10. Apply changes via Step translation (surgical CRDT operations)
     let step_result = {
         let awareness = session.awareness.read().await;
         let doc = awareness.doc();
         super::step_translator::StepTranslator::apply_steps(doc, &steps)
     };
 
-    // 10. Trigger flush and get new version
+    // 11. Trigger flush and get new version
     let new_version = session
         .trigger_flush(&state.db, &state.storage)
         .await?;

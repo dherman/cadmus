@@ -3,6 +3,7 @@ import { SCHEMA_VERSION } from '@cadmus/doc-schema';
 import { serialize } from './serialize';
 import { parse } from './parse';
 import { diff } from './diff';
+import { merge } from './merge';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -59,6 +60,17 @@ app.post('/diff', async (req, res) => {
   } catch (err) {
     console.error('Diff error:', err);
     res.status(500).json({ error: 'Diff computation failed' });
+  }
+});
+
+app.post('/merge', async (req, res) => {
+  try {
+    const { base_doc, current_doc, new_doc } = req.body;
+    const steps = merge(base_doc, current_doc, new_doc);
+    res.json({ steps });
+  } catch (err) {
+    console.error('Merge error:', err);
+    res.status(500).json({ error: 'Merge computation failed' });
   }
 });
 

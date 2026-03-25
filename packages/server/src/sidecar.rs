@@ -36,6 +36,13 @@ struct DiffRequest {
     new_doc: serde_json::Value,
 }
 
+#[derive(Serialize)]
+struct MergeRequest {
+    base_doc: serde_json::Value,
+    current_doc: serde_json::Value,
+    new_doc: serde_json::Value,
+}
+
 #[derive(Deserialize)]
 struct DiffResponse {
     steps: Vec<serde_json::Value>,
@@ -99,6 +106,30 @@ impl SidecarClient {
             .client
             .post(format!("{}/diff", self.base_url))
             .json(&DiffRequest { old_doc, new_doc })
+            .send()
+            .await?
+            .json()
+            .await?;
+        Ok(resp.steps)
+    }
+
+    /// Three-way merge: given a common base, a current state (with concurrent
+    /// edits), and a new state (from CLI push), produce Steps that transform
+    /// the current state into the merged result.
+    pub async fn merge(
+        &self,
+        base_doc: serde_json::Value,
+        current_doc: serde_json::Value,
+        new_doc: serde_json::Value,
+    ) -> Result<Vec<serde_json::Value>, reqwest::Error> {
+        let resp: DiffResponse = self
+            .client
+            .post(format!("{}/merge", self.base_url))
+            .json(&MergeRequest {
+                base_doc,
+                current_doc,
+                new_doc,
+            })
             .send()
             .await?
             .json()

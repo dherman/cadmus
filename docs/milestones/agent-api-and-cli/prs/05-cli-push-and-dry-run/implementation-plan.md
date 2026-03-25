@@ -10,7 +10,7 @@
 
 ### 1. Implement push command
 
-- [ ] In `packages/cli/src/main.ts`, implement the push action:
+- [x] In `packages/cli/src/main.ts`, implement the push action:
 
 ```typescript
 program
@@ -76,7 +76,7 @@ program
 
 ### 2. Implement dry-run display
 
-- [ ] Add `displayDryRunResult()`:
+- [x] Add `displayDryRunResult()`:
 
 ```typescript
 function displayDryRunResult(result: PushResponse, meta: CheckoutMetadata) {
@@ -107,7 +107,7 @@ function displayDryRunResult(result: PushResponse, meta: CheckoutMetadata) {
 
 ### 3. Implement push result display
 
-- [ ] Add `displayPushResult()`:
+- [x] Add `displayPushResult()`:
 
 ```typescript
 function displayPushResult(result: PushResponse, meta: CheckoutMetadata) {
@@ -120,7 +120,7 @@ function displayPushResult(result: PushResponse, meta: CheckoutMetadata) {
 
 ### 4. Implement change summary formatting
 
-- [ ] Add `displayChangeSummary()`:
+- [x] Add `displayChangeSummary()`:
 
 ```typescript
 function displayChangeSummary(summary: ChangeSummary) {
@@ -135,7 +135,7 @@ function displayChangeSummary(summary: ChangeSummary) {
 
 ### 5. Implement auto-detection of document ID
 
-- [ ] When `doc-id` argument looks like a file path (contains `/` or `.`), try auto-detection:
+- [x] When `doc-id` argument looks like a file path (contains `/` or `.`), try auto-detection:
 
 ```typescript
 // If user runs: cadmus push ./design-spec.md
@@ -156,11 +156,11 @@ function autoDetectDocId(filePath: string): string | null {
 }
 ```
 
-- [ ] Update the push command to use auto-detection when appropriate.
+- [x] Update the push command to use auto-detection when appropriate.
 
 ### 6. Add error handling for common push failures
 
-- [ ] Handle API errors with user-friendly messages:
+- [x] Handle API errors with user-friendly messages:
 
 ```typescript
 try {
@@ -194,7 +194,7 @@ try {
 
 ### 7. Add pushContent method to API client
 
-- [ ] In `packages/cli/src/api.ts`, add:
+- [x] In `packages/cli/src/api.ts`, add:
 
 ```typescript
 async pushContent(
@@ -209,59 +209,59 @@ async pushContent(
 
 ### 8. Test the full checkout→edit→push cycle
 
-- [ ] Start the dev stack: `pnpm dev`
-- [ ] Create a document and add content via the browser.
-- [ ] Checkout:
+- [x] Start the dev stack: `pnpm dev`
+- [x] Create a document and add content via the browser.
+- [x] Checkout:
 
 ```bash
 cd packages/cli
 pnpm dev -- checkout <doc-id> -o ./test-doc.md
 ```
 
-- [ ] Edit the file locally (add a paragraph, change a heading).
-- [ ] Preview with dry-run:
+- [x] Edit the file locally (add a paragraph, change a heading).
+- [x] Preview with dry-run:
 
 ```bash
 pnpm dev -- push <doc-id> ./test-doc.md --dry-run
 ```
 
-- [ ] Verify the diff output shows the changes correctly.
-- [ ] Push for real:
+- [x] Verify the diff output shows the changes correctly.
+- [x] Push for real:
 
 ```bash
 pnpm dev -- push <doc-id> ./test-doc.md
 ```
 
-- [ ] Verify the browser shows the updated content.
-- [ ] Verify `.cadmus/<doc-id>.json` has the new version.
-- [ ] Edit and push again (sequential push cycle).
-- [ ] Verify the second push uses the updated base_version.
+- [x] Verify the browser shows the updated content.
+- [x] Verify `.cadmus/<doc-id>.json` has the new version.
+- [x] Edit and push again (sequential push cycle).
+- [x] Verify the second push uses the updated base_version.
 
 ### 9. Test concurrent edit scenarios
 
-- [ ] Open the document in the browser and make an edit to paragraph 1.
-- [ ] Edit paragraph 3 in the local markdown file.
-- [ ] Push the local changes.
-- [ ] Verify both edits are preserved (three-way merge).
+- [x] Open the document in the browser and make an edit to paragraph 1.
+- [x] Edit paragraph 3 in the local markdown file.
+- [x] Push the local changes.
+- [x] Verify both edits are preserved (three-way merge).
 
 ### 10. Build and format check
 
-- [ ] Run `pnpm -F @cadmus/cli build` (or verify tsx works) — compiles without errors.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/cli build` (or verify tsx works) — compiles without errors.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
-- [ ] `cadmus push <doc-id> <file>` pushes changes successfully
-- [ ] Push response shows version and change summary
-- [ ] `--dry-run` shows colored unified diff without applying
-- [ ] `.cadmus/<doc-id>.json` is updated with new version after push
-- [ ] Sequential push cycles work (push → edit → push)
-- [ ] Missing checkout metadata shows helpful error
-- [ ] Missing file shows helpful error
-- [ ] Stale base_version shows helpful re-checkout suggestion
-- [ ] Permission errors show clear message
-- [ ] Concurrent edits to different regions merge cleanly
-- [ ] Auto-detection of document ID works from `.cadmus/` metadata
+- [x] `cadmus push <doc-id> <file>` pushes changes successfully
+- [x] Push response shows version and change summary
+- [x] `--dry-run` shows colored unified diff without applying
+- [x] `.cadmus/<doc-id>.json` is updated with new version after push
+- [x] Sequential push cycles work (push → edit → push)
+- [x] Missing checkout metadata shows helpful error
+- [x] Missing file shows helpful error
+- [x] Stale base_version shows helpful re-checkout suggestion
+- [x] Permission errors show clear message
+- [x] Concurrent edits to different regions merge cleanly
+- [x] Auto-detection of document ID works from `.cadmus/` metadata
 
 ## Files Modified
 

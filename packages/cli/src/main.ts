@@ -17,9 +17,15 @@ import * as path from 'node:path';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import { CadmusClient, ApiError, type DocumentSummary } from './api.js';
+import { CadmusClient, ApiError, type DocumentSummary, type PushResponse } from './api.js';
 import { loginCommand, statusCommand } from './auth.js';
-import { loadCredentials, saveCheckoutMetadata } from './config.js';
+import {
+  loadCredentials,
+  saveCheckoutMetadata,
+  loadCheckoutMetadata,
+  getMetadataDir,
+  type CheckoutMetadata,
+} from './config.js';
 
 // --- Helpers ---
 
@@ -102,6 +108,72 @@ async function resolveDocId(client: CadmusClient, shortId: string): Promise<stri
     return process.exit(1);
   }
   return matches[0].id;
+}
+
+function autoDetectDocId(filePath: string): string | null {
+  const fileDir = path.dirname(path.resolve(filePath));
+  const metaDir = getMetadataDir(fileDir);
+  if (!fs.existsSync(metaDir)) return null;
+
+  const files = fs.readdirSync(metaDir).filter((f) => f.endsWith('.json'));
+  for (const f of files) {
+    const meta = JSON.parse(fs.readFileSync(path.join(metaDir, f), 'utf-8')) as CheckoutMetadata;
+    if (path.resolve(fileDir, meta.file) === path.resolve(filePath)) {
+      return meta.doc_id;
+    }
+  }
+  return null;
+}
+
+interface ChangeSummary {
+  steps_applied: number;
+  nodes_added: number;
+  nodes_removed: number;
+  nodes_modified: number;
+}
+
+function displayChangeSummary(summary: ChangeSummary): void {
+  const parts = [];
+  if (summary.nodes_added > 0) parts.push(`${summary.nodes_added} additions`);
+  if (summary.nodes_removed > 0) parts.push(`${summary.nodes_removed} removals`);
+  if (summary.nodes_modified > 0) parts.push(`${summary.nodes_modified} modifications`);
+
+  console.log(`  Changes: ${summary.steps_applied} steps applied (${parts.join(', ')})`);
+}
+
+function displayDryRunResult(result: PushResponse, meta: CheckoutMetadata): void {
+  console.log(`Preview of changes to "${meta.title}":\n`);
+
+  if (result.diff) {
+    const lines = result.diff.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('+')) {
+        console.log(chalk.green(line));
+      } else if (line.startsWith('-')) {
+        console.log(chalk.red(line));
+      } else if (line.startsWith('@@')) {
+        console.log(chalk.cyan(line));
+      } else {
+        console.log(line);
+      }
+    }
+  }
+
+  console.log();
+  if (result.changes_summary) {
+    displayChangeSummary(result.changes_summary);
+  }
+  console.log();
+  console.log('To apply these changes, run without --dry-run.');
+}
+
+function displayPushResult(result: PushResponse, meta: CheckoutMetadata): void {
+  console.log(chalk.green('✓') + ` Pushed changes to "${meta.title}"`);
+  console.log(`  New version: ${result.version}`);
+  if (result.changes_summary) {
+    displayChangeSummary(result.changes_summary);
+  }
+  console.log('  Checkout metadata updated.');
 }
 
 function handleError(err: unknown): never {
@@ -237,17 +309,133 @@ program
     }
   });
 
-// --- Push (stub for PR 5) ---
+// --- Push ---
 
 program
-  .command('push <doc-id> <file>')
+  .command('push [doc-id] [file]')
   .description('Push local markdown changes to the server')
   .option('--dry-run', 'Preview changes without applying')
   .option('--force', 'Force push even with large diffs')
-  .action(async (_docId: string, _file: string, _options) => {
-    console.log('Not yet implemented (coming in PR 5)');
-    process.exit(1);
-  });
+  .action(
+    async (
+      docId: string | undefined,
+      file: string | undefined,
+      _options: unknown,
+      command: Command,
+    ) => {
+      try {
+        const opts = command.opts<{ dryRun?: boolean; force?: boolean }>();
+
+        // Support single-argument form: cadmus push ./file.md (auto-detect doc ID)
+        if (docId && !file) {
+          // The single argument might be a file path — try auto-detection
+          const filePath = path.resolve(userCwd, docId);
+          if (fs.existsSync(filePath)) {
+            const detected = autoDetectDocId(filePath);
+            if (detected) {
+              file = docId;
+              docId = detected;
+            } else {
+              console.error(
+                chalk.red('Error:') +
+                  ` No checkout metadata found for ${filePath}.` +
+                  ` Run 'cadmus checkout <doc-id>' first.`,
+              );
+              process.exit(1);
+            }
+          } else {
+            console.error(chalk.red('Error:') + ` File not found: ${docId}`);
+            process.exit(1);
+          }
+        }
+
+        if (!docId || !file) {
+          console.error(chalk.red('Error:') + ' Usage: cadmus push <doc-id> <file>');
+          process.exit(1);
+        }
+
+        const client = await getAuthenticatedClient();
+
+        // Resolve doc ID
+        const fullId = await resolveDocId(client, docId);
+
+        // Resolve file path relative to user's working directory
+        const filePath = path.resolve(userCwd, file);
+
+        // Read checkout metadata
+        const fileDir = path.dirname(filePath);
+        const meta = loadCheckoutMetadata(fileDir, fullId);
+        if (!meta) {
+          console.error(
+            chalk.red('Error:') +
+              ` No checkout metadata found for ${fullId}.` +
+              ` Run 'cadmus checkout ${docId}' first.`,
+          );
+          process.exit(1);
+        }
+
+        // Read the local file
+        if (!fs.existsSync(filePath)) {
+          console.error(chalk.red('Error:') + ` File not found: ${file}`);
+          process.exit(1);
+        }
+        const content = fs.readFileSync(filePath, 'utf-8');
+
+        // Push
+        const mode = opts.dryRun ? 'Previewing' : 'Pushing';
+        const spinner = ora(`${mode} changes...`).start();
+
+        const result = await client.pushContent(
+          fullId,
+          {
+            base_version: meta.version,
+            format: 'markdown',
+            content,
+          },
+          opts.dryRun,
+        );
+
+        spinner.stop();
+
+        if (opts.dryRun) {
+          displayDryRunResult(result, meta);
+        } else {
+          displayPushResult(result, meta);
+
+          // Update checkout metadata with new version
+          if (result.version) {
+            saveCheckoutMetadata(fileDir, {
+              ...meta,
+              version: result.version,
+              checked_out_at: new Date().toISOString(),
+            });
+          }
+        }
+      } catch (err) {
+        if (err instanceof ApiError) {
+          switch (err.status) {
+            case 404:
+              console.error(
+                chalk.red('Error:') +
+                  ' Base version not found.' +
+                  ` Re-checkout with 'cadmus checkout ${docId}'.`,
+              );
+              break;
+            case 403:
+              console.error(chalk.red('Error:') + " You don't have edit access to this document.");
+              break;
+            case 422:
+              console.error(chalk.red('Error:') + ' Failed to parse markdown: ' + err.body);
+              break;
+            default:
+              handleError(err);
+          }
+          process.exit(1);
+        }
+        handleError(err as Error);
+      }
+    },
+  );
 
 // --- Comments (stub — deferred) ---
 
