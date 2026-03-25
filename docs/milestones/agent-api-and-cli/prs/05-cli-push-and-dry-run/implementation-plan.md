@@ -209,31 +209,31 @@ async pushContent(
 
 ### 8. Test the full checkout→edit→push cycle
 
-- [ ] Start the dev stack: `pnpm dev`
-- [ ] Create a document and add content via the browser.
-- [ ] Checkout:
+- [x] Start the dev stack: `pnpm dev`
+- [x] Create a document and add content via the browser.
+- [x] Checkout:
 
 ```bash
 cd packages/cli
 pnpm dev -- checkout <doc-id> -o ./test-doc.md
 ```
 
-- [ ] Edit the file locally (add a paragraph, change a heading).
-- [ ] Preview with dry-run:
+- [x] Edit the file locally (add a paragraph, change a heading).
+- [x] Preview with dry-run:
 
 ```bash
 pnpm dev -- push <doc-id> ./test-doc.md --dry-run
 ```
 
-- [ ] Verify the diff output shows the changes correctly.
-- [ ] Push for real:
+- [x] Verify the diff output shows the changes correctly.
+- [x] Push for real:
 
 ```bash
 pnpm dev -- push <doc-id> ./test-doc.md
 ```
 
-- [ ] Verify the browser shows the updated content.
-- [ ] Verify `.cadmus/<doc-id>.json` has the new version.
+- [x] Verify the browser shows the updated content.
+- [x] Verify `.cadmus/<doc-id>.json` has the new version.
 - [ ] Edit and push again (sequential push cycle).
 - [ ] Verify the second push uses the updated base_version.
 
@@ -251,10 +251,10 @@ pnpm dev -- push <doc-id> ./test-doc.md
 
 ## Verification
 
-- [ ] `cadmus push <doc-id> <file>` pushes changes successfully
-- [ ] Push response shows version and change summary
-- [ ] `--dry-run` shows colored unified diff without applying
-- [ ] `.cadmus/<doc-id>.json` is updated with new version after push
+- [x] `cadmus push <doc-id> <file>` pushes changes successfully
+- [x] Push response shows version and change summary
+- [x] `--dry-run` shows colored unified diff without applying
+- [x] `.cadmus/<doc-id>.json` is updated with new version after push
 - [ ] Sequential push cycles work (push → edit → push)
 - [ ] Missing checkout metadata shows helpful error
 - [ ] Missing file shows helpful error
