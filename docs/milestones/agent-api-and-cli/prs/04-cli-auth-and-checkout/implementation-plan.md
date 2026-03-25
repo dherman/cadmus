@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-- [ ] PR 1 (Agent Token Management) is merged
+- [x] PR 1 (Agent Token Management) is merged
 
 ## Steps
 
 ### 1. Add CLI dependencies
 
-- [ ] Update `packages/cli/package.json` to add dependencies:
+- [x] Update `packages/cli/package.json` to add dependencies:
 
 ```json
 {
@@ -20,11 +20,11 @@
 }
 ```
 
-- [ ] Run `pnpm install` from the workspace root.
+- [x] Run `pnpm install` from the workspace root.
 
 ### 2. Add TypeScript configuration
 
-- [ ] Create `packages/cli/tsconfig.json`:
+- [x] Create `packages/cli/tsconfig.json`:
 
 ```json
 {
@@ -45,7 +45,7 @@
 
 ### 3. Implement config module
 
-- [ ] Create `packages/cli/src/config.ts`:
+- [x] Create `packages/cli/src/config.ts`:
 
 ```typescript
 // Manages credential storage (~/.config/cadmus/credentials)
@@ -76,13 +76,13 @@ export function loadCheckoutMetadata(fileDir: string, docId: string): CheckoutMe
 export function saveCheckoutMetadata(fileDir: string, meta: CheckoutMetadata): void { ... }
 ```
 
-- [ ] Use `os.homedir()` + `path.join` for `~/.config/cadmus/credentials`.
-- [ ] Use `fs.mkdirSync` with `{ recursive: true }` to create directories.
-- [ ] Set file permissions to `0o600` on credentials file via `fs.chmodSync`.
+- [x] Use `os.homedir()` + `path.join` for `~/.config/cadmus/credentials`.
+- [x] Use `fs.mkdirSync` with `{ recursive: true }` to create directories.
+- [x] Set file permissions to `0o600` on credentials file via `fs.chmodSync`.
 
 ### 4. Implement API client module
 
-- [ ] Create `packages/cli/src/api.ts`:
+- [x] Create `packages/cli/src/api.ts`:
 
 ```typescript
 export class CadmusClient {
@@ -131,7 +131,7 @@ export class ApiError extends Error {
 
 ### 5. Implement auth commands
 
-- [ ] Create `packages/cli/src/auth.ts`:
+- [x] Create `packages/cli/src/auth.ts`:
 
 ```typescript
 export async function loginCommand(options: { server: string; token?: string }) {
@@ -169,12 +169,12 @@ export async function loginCommand(options: { server: string; token?: string }) 
 }
 ```
 
-- [ ] Implement password hiding in the terminal (disable echo during password input).
-- [ ] Implement `statusCommand()` that loads credentials and calls `GET /api/auth/me`.
+- [x] Implement password hiding in the terminal (disable echo during password input).
+- [x] Implement `statusCommand()` that loads credentials and calls `GET /api/auth/me`.
 
 ### 6. Implement docs list command
 
-- [ ] In `packages/cli/src/main.ts`, implement the `docs list` action:
+- [x] In `packages/cli/src/main.ts`, implement the `docs list` action:
 
 ```typescript
 docs
@@ -201,12 +201,12 @@ docs
   });
 ```
 
-- [ ] Implement `printTable(rows)` — a simple table formatter using fixed-width columns.
-- [ ] Implement `formatRelativeTime(iso: string)` — converts ISO timestamp to "2 hours ago", "3 days ago", etc.
+- [x] Implement `printTable(rows)` — a simple table formatter using fixed-width columns.
+- [x] Implement `formatRelativeTime(iso: string)` — converts ISO timestamp to "2 hours ago", "3 days ago", etc.
 
 ### 7. Implement checkout command
 
-- [ ] In `packages/cli/src/main.ts`, implement the checkout action:
+- [x] In `packages/cli/src/main.ts`, implement the checkout action:
 
 ```typescript
 program
@@ -249,7 +249,7 @@ program
 
 ### 8. Implement document ID resolution
 
-- [ ] Add `resolveDocId(client, shortId)`:
+- [x] Add `resolveDocId(client, shortId)`:
   - If `shortId` is a full UUID, use it directly.
   - Otherwise, call `listDocuments()` and find IDs that start with the prefix.
   - If exactly one match, return it.
@@ -258,7 +258,7 @@ program
 
 ### 9. Implement helper utility: getAuthenticatedClient
 
-- [ ] Add a helper that loads credentials and constructs a `CadmusClient`:
+- [x] Add a helper that loads credentials and constructs a `CadmusClient`:
 
 ```typescript
 async function getAuthenticatedClient(): Promise<CadmusClient> {
@@ -277,7 +277,7 @@ async function getAuthenticatedClient(): Promise<CadmusClient> {
 
 ### 10. Wire up all commands in main.ts
 
-- [ ] Rewrite `packages/cli/src/main.ts` to use the implementations from steps 5–9, replacing all TODO stubs.
+- [x] Rewrite `packages/cli/src/main.ts` to use the implementations from steps 5–9, replacing all TODO stubs.
 
 ### 11. Test the CLI manually
 
@@ -313,8 +313,8 @@ pnpm dev -- docs list   # should work with agent token
 
 ### 12. Build and format check
 
-- [ ] Run `pnpm -F @cadmus/cli build` (or verify tsx works) — compiles without errors.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/cli build` (or verify tsx works) — compiles without errors.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
