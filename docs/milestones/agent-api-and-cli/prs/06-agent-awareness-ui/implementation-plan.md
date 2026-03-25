@@ -8,7 +8,9 @@
 
 ### 1. Update WebSocket handler to set agent awareness fields
 
-- [ ] In `packages/server/src/websocket/handler.rs`, update the initial awareness state to include agent fields:
+Note: The server does not set awareness state — awareness is a client-side Yjs protocol feature. Each client (human or agent) sets its own awareness state, and the server relays it. Agent clients are responsible for including `isAgent: true` and `agentStatus` in their awareness user fields. No server-side changes are needed.
+
+- [x] In `packages/server/src/websocket/handler.rs`, update the initial awareness state to include agent fields:
 
 ```rust
 let awareness_state = json!({
@@ -29,11 +31,11 @@ let awareness_state = json!({
 });
 ```
 
-- [ ] Verify the awareness state is broadcast to all connected clients when an agent connects.
+- [x] Verify the awareness state is broadcast to all connected clients when an agent connects.
 
 ### 2. Update awareness type definitions in frontend
 
-- [ ] In `packages/web/src/`, find where awareness state types are defined and add agent fields:
+- [x] In `packages/web/src/`, find where awareness state types are defined and add agent fields:
 
 ```typescript
 interface AwarenessState {
@@ -52,7 +54,7 @@ interface AwarenessState {
 
 ### 3. Create bot icon component
 
-- [ ] Add a simple bot icon SVG component or use a Unicode symbol (🤖). If using SVG:
+- [x] Add a simple bot icon SVG component or use a Unicode symbol (🤖). If using SVG:
 
 ```tsx
 function BotIcon({ className }: { className?: string }) {
@@ -66,9 +68,9 @@ function BotIcon({ className }: { className?: string }) {
 
 ### 4. Update presence indicator rendering
 
-- [ ] Find the component that renders the presence/awareness indicators (likely in `Editor.tsx` or a toolbar component).
+- [x] Find the component that renders the presence/awareness indicators (likely in `Editor.tsx` or a toolbar component).
 
-- [ ] Update the rendering to distinguish agent clients:
+- [x] Update the rendering to distinguish agent clients:
 
 ```tsx
 {
@@ -91,7 +93,7 @@ function BotIcon({ className }: { className?: string }) {
 
 ### 5. Add agent cursor styles
 
-- [ ] In `packages/web/src/editor.css`, add styles for agent cursors:
+- [x] In `packages/web/src/editor.css`, add styles for agent cursors:
 
 ```css
 /* Agent presence indicator */
@@ -128,9 +130,9 @@ function BotIcon({ className }: { className?: string }) {
 
 ### 6. Update cursor rendering for agent awareness
 
-- [ ] If the Yjs awareness cursor rendering supports custom attributes, add `data-agent="true"` to cursor elements for agent clients. This depends on how `y-prosemirror`'s cursor plugin is configured.
+- [x] If the Yjs awareness cursor rendering supports custom attributes, add `data-agent="true"` to cursor elements for agent clients. This depends on how `y-prosemirror`'s cursor plugin is configured.
 
-- [ ] If the cursor plugin doesn't support custom attributes natively, consider extending the cursor builder or applying CSS based on the muted color (#888) that agents use.
+- [x] If the cursor plugin doesn't support custom attributes natively, consider extending the cursor builder or applying CSS based on the muted color (#888) that agents use.
 
 ### 7. Test with an agent WebSocket connection
 
@@ -149,9 +151,9 @@ wscat -c "ws://localhost:8080/api/docs/{doc-id}/ws?token=cadmus_..."
 
 ### 8. Build and format check
 
-- [ ] Run `pnpm -F @cadmus/web build` — TypeScript compiles without errors.
-- [ ] Run `cargo build` in `packages/server/` — compiles without errors.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/web build` — TypeScript compiles without errors.
+- [x] Run `cargo build` in `packages/server/` — compiles without errors.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
@@ -165,8 +167,11 @@ wscat -c "ws://localhost:8080/api/docs/{doc-id}/ws?token=cadmus_..."
 
 ## Files Modified
 
-| File                                          | Change                                     |
-| --------------------------------------------- | ------------------------------------------ |
-| `packages/server/src/websocket/handler.rs`    | Set isAgent/agentStatus in awareness state |
-| `packages/web/src/Editor.tsx` (or equivalent) | Render agent presence with bot icon        |
-| `packages/web/src/editor.css`                 | Add agent awareness styles                 |
+| File                                                  | Change                                               |
+| ----------------------------------------------------- | ---------------------------------------------------- |
+| `packages/web/src/Presence.tsx`                       | Render agent presence with bot icon and status text   |
+| `packages/web/src/BotIcon.tsx`                        | New SVG bot icon component                           |
+| `packages/web/src/collaboration-cursor-extension.ts`  | Add isAgent/agentStatus to user type                 |
+| `packages/web/src/cursor-renderer.ts`                 | Agent cursor: dashed style, muted color, bot label   |
+| `packages/web/src/user-identity.ts`                   | Add isAgent/agentStatus to UserIdentity interface    |
+| `packages/web/src/editor.css`                         | Add agent presence and cursor styles                 |

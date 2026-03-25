@@ -5,9 +5,16 @@ import type { WebsocketProvider } from 'y-websocket';
 
 type Awareness = WebsocketProvider['awareness'];
 
+export interface CollaborationCursorUser {
+  name: string;
+  color: string;
+  isAgent?: boolean;
+  agentStatus?: string | null;
+}
+
 export interface CollaborationCursorOptions {
   awareness: Awareness;
-  user: { name: string; color: string };
+  user: CollaborationCursorUser;
 }
 
 export const CollaborationCursor = Extension.create<CollaborationCursorOptions>({
