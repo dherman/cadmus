@@ -10,7 +10,7 @@
 
 ### 1. Implement push command
 
-- [ ] In `packages/cli/src/main.ts`, implement the push action:
+- [x] In `packages/cli/src/main.ts`, implement the push action:
 
 ```typescript
 program
@@ -76,7 +76,7 @@ program
 
 ### 2. Implement dry-run display
 
-- [ ] Add `displayDryRunResult()`:
+- [x] Add `displayDryRunResult()`:
 
 ```typescript
 function displayDryRunResult(result: PushResponse, meta: CheckoutMetadata) {
@@ -107,7 +107,7 @@ function displayDryRunResult(result: PushResponse, meta: CheckoutMetadata) {
 
 ### 3. Implement push result display
 
-- [ ] Add `displayPushResult()`:
+- [x] Add `displayPushResult()`:
 
 ```typescript
 function displayPushResult(result: PushResponse, meta: CheckoutMetadata) {
@@ -120,7 +120,7 @@ function displayPushResult(result: PushResponse, meta: CheckoutMetadata) {
 
 ### 4. Implement change summary formatting
 
-- [ ] Add `displayChangeSummary()`:
+- [x] Add `displayChangeSummary()`:
 
 ```typescript
 function displayChangeSummary(summary: ChangeSummary) {
@@ -135,7 +135,7 @@ function displayChangeSummary(summary: ChangeSummary) {
 
 ### 5. Implement auto-detection of document ID
 
-- [ ] When `doc-id` argument looks like a file path (contains `/` or `.`), try auto-detection:
+- [x] When `doc-id` argument looks like a file path (contains `/` or `.`), try auto-detection:
 
 ```typescript
 // If user runs: cadmus push ./design-spec.md
@@ -156,11 +156,11 @@ function autoDetectDocId(filePath: string): string | null {
 }
 ```
 
-- [ ] Update the push command to use auto-detection when appropriate.
+- [x] Update the push command to use auto-detection when appropriate.
 
 ### 6. Add error handling for common push failures
 
-- [ ] Handle API errors with user-friendly messages:
+- [x] Handle API errors with user-friendly messages:
 
 ```typescript
 try {
@@ -194,7 +194,7 @@ try {
 
 ### 7. Add pushContent method to API client
 
-- [ ] In `packages/cli/src/api.ts`, add:
+- [x] In `packages/cli/src/api.ts`, add:
 
 ```typescript
 async pushContent(
@@ -246,8 +246,8 @@ pnpm dev -- push <doc-id> ./test-doc.md
 
 ### 10. Build and format check
 
-- [ ] Run `pnpm -F @cadmus/cli build` (or verify tsx works) — compiles without errors.
-- [ ] Run `pnpm run format:check` — no formatting issues.
+- [x] Run `pnpm -F @cadmus/cli build` (or verify tsx works) — compiles without errors.
+- [x] Run `pnpm run format:check` — no formatting issues.
 
 ## Verification
 
