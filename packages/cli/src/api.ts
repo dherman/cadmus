@@ -86,7 +86,7 @@ export class CadmusClient {
         headers,
         body: body ? JSON.stringify(body) : undefined,
       });
-    } catch (err) {
+    } catch {
       throw new Error(`Cannot reach server at ${this.server}`);
     }
 
