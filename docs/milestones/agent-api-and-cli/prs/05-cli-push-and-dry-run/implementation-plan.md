@@ -239,10 +239,10 @@ pnpm dev -- push <doc-id> ./test-doc.md
 
 ### 9. Test concurrent edit scenarios
 
-- [ ] Open the document in the browser and make an edit to paragraph 1.
-- [ ] Edit paragraph 3 in the local markdown file.
-- [ ] Push the local changes.
-- [ ] Verify both edits are preserved (three-way merge).
+- [x] Open the document in the browser and make an edit to paragraph 1.
+- [x] Edit paragraph 3 in the local markdown file.
+- [x] Push the local changes.
+- [x] Verify both edits are preserved (three-way merge).
 
 ### 10. Build and format check
 
@@ -260,7 +260,7 @@ pnpm dev -- push <doc-id> ./test-doc.md
 - [x] Missing file shows helpful error
 - [x] Stale base_version shows helpful re-checkout suggestion
 - [x] Permission errors show clear message
-- [ ] Concurrent edits to different regions merge cleanly
+- [x] Concurrent edits to different regions merge cleanly
 - [x] Auto-detection of document ID works from `.cadmus/` metadata
 
 ## Files Modified
