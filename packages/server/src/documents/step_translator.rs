@@ -37,6 +37,12 @@ pub struct StepTranslator;
 impl StepTranslator {
     /// Apply a sequence of ProseMirror Steps to a Yrs document.
     ///
+    /// All steps are applied within a single Yrs transaction so that the
+    /// resulting CRDT update is atomic. This is important because connected
+    /// browser clients (via y-prosemirror) process each Yrs update as a unit;
+    /// splitting steps across transactions can cause y-prosemirror's internal
+    /// position mapping to become inconsistent with subsequent steps.
+    ///
     /// Steps are applied best-effort: if one Step fails, the error is logged
     /// and the remaining Steps continue. The caller receives a summary of how
     /// many succeeded vs. failed.
@@ -44,10 +50,11 @@ impl StepTranslator {
         let mut applied = 0;
         let mut failed = 0;
 
+        let mut txn = doc.transact_mut();
+        let fragment = txn.get_or_insert_xml_fragment(FRAGMENT_NAME);
+
         for step in steps {
-            // Each step gets its own transaction so that position mapping
-            // reflects the mutations from prior steps.
-            match Self::apply_step(doc, step) {
+            match Self::apply_step(&mut txn, &fragment, step) {
                 Ok(()) => applied += 1,
                 Err(e) => {
                     tracing::warn!("Step translation failed: {e}");
@@ -56,22 +63,29 @@ impl StepTranslator {
             }
         }
 
+        // Transaction commits (and broadcasts to connected clients) on drop
+        drop(txn);
+
         StepResult {
             steps_applied: applied,
             steps_failed: failed,
         }
     }
 
-    /// Apply a single ProseMirror Step.
-    fn apply_step(doc: &Doc, step: &Value) -> Result<(), TranslationError> {
+    /// Apply a single ProseMirror Step within an existing transaction.
+    fn apply_step(
+        txn: &mut yrs::TransactionMut,
+        fragment: &XmlFragmentRef,
+        step: &Value,
+    ) -> Result<(), TranslationError> {
         match step.get("stepType").and_then(|s| s.as_str()) {
-            Some("replace") => Self::apply_replace_step(doc, step),
-            Some("replaceAround") => Self::apply_replace_around_step(doc, step),
-            Some("addMark") => Self::apply_add_mark_step(doc, step),
-            Some("removeMark") => Self::apply_remove_mark_step(doc, step),
-            Some("addNodeMark") => Self::apply_add_node_mark_step(doc, step),
-            Some("removeNodeMark") => Self::apply_remove_node_mark_step(doc, step),
-            Some("attr") => Self::apply_attr_step(doc, step),
+            Some("replace") => Self::apply_replace_step(txn, fragment, step),
+            Some("replaceAround") => Self::apply_replace_around_step(txn, fragment, step),
+            Some("addMark") => Self::apply_add_mark_step(txn, fragment, step),
+            Some("removeMark") => Self::apply_remove_mark_step(txn, fragment, step),
+            Some("addNodeMark") => Self::apply_add_node_mark_step(txn, fragment, step),
+            Some("removeNodeMark") => Self::apply_remove_node_mark_step(txn, fragment, step),
+            Some("attr") => Self::apply_attr_step(txn, fragment, step),
             Some(other) => Err(TranslationError::UnknownStepType(other.to_string())),
             None => Err(TranslationError::MissingField("stepType".to_string())),
         }
@@ -81,17 +95,18 @@ impl StepTranslator {
     // ReplaceStep
     // -----------------------------------------------------------------------
 
-    fn apply_replace_step(doc: &Doc, step: &Value) -> Result<(), TranslationError> {
+    fn apply_replace_step(
+        txn: &mut yrs::TransactionMut,
+        fragment: &XmlFragmentRef,
+        step: &Value,
+    ) -> Result<(), TranslationError> {
         let from = require_u32(step, "from")?;
         let to = require_u32(step, "to")?;
         let slice = step.get("slice");
 
-        let mut txn = doc.transact_mut();
-        let fragment = txn.get_or_insert_xml_fragment(FRAGMENT_NAME);
-
         // Delete existing content in range (if from != to)
         if from != to {
-            delete_range(&mut txn, &fragment, from, to)?;
+            delete_range(txn, fragment, from, to)?;
         }
 
         // Insert slice content (if slice exists and has content)
@@ -106,7 +121,7 @@ impl StepTranslator {
                         .get("openEnd")
                         .and_then(|v| v.as_u64())
                         .unwrap_or(0) as u32;
-                    insert_slice(&mut txn, &fragment, from, content, open_start, open_end)?;
+                    insert_slice(txn, fragment, from, content, open_start, open_end)?;
                 }
             }
         }
@@ -118,15 +133,16 @@ impl StepTranslator {
     // ReplaceAroundStep
     // -----------------------------------------------------------------------
 
-    fn apply_replace_around_step(doc: &Doc, step: &Value) -> Result<(), TranslationError> {
+    fn apply_replace_around_step(
+        txn: &mut yrs::TransactionMut,
+        fragment: &XmlFragmentRef,
+        step: &Value,
+    ) -> Result<(), TranslationError> {
         let from = require_u32(step, "from")?;
         let _to = require_u32(step, "to")?;
         let _gap_from = require_u32(step, "gapFrom")?;
         let _gap_to = require_u32(step, "gapTo")?;
         let slice = step.get("slice");
-
-        let mut txn = doc.transact_mut();
-        let fragment = txn.get_or_insert_xml_fragment(FRAGMENT_NAME);
 
         // ReplaceAroundStep replaces the wrapper around the gap content.
         // The content between gapFrom and gapTo is preserved; the content
@@ -142,11 +158,11 @@ impl StepTranslator {
         // detect the parent element at `from` and operate on it directly.
 
         // Find the element that starts at `from` (the wrapper being replaced)
-        let pos = resolve_position(&txn, &fragment, from)?;
+        let pos = resolve_position(txn, fragment, from)?;
 
         match pos {
             ResolvedPosition::AtNodeBoundary { parent, child_index } => {
-                if let Some(node) = get_child(&txn, &parent, child_index) {
+                if let Some(node) = get_child(txn, &parent, child_index) {
                     if let XmlNode::Element(wrapper_el) = node {
                         if let Some(slice) = slice {
                             if let Some(content) = slice.get("content").and_then(|c| c.as_array())
@@ -162,14 +178,14 @@ impl StepTranslator {
                                         new_wrapper.get("attrs").and_then(|a| a.as_object());
 
                                     // Collect gap children before modifying the tree
-                                    let gap_children = collect_children(&txn, &wrapper_el);
+                                    let gap_children = collect_children(txn, &wrapper_el);
 
                                     // Remove old wrapper
-                                    remove_child(&mut txn, &parent, child_index);
+                                    remove_child(txn, &parent, child_index);
 
                                     // Insert new wrapper
                                     let new_el = insert_element(
-                                        &mut txn,
+                                        txn,
                                         &parent,
                                         child_index,
                                         new_type,
@@ -179,23 +195,23 @@ impl StepTranslator {
                                     if let Some(attrs) = new_attrs {
                                         for (key, value) in attrs {
                                             let str_val = json_value_to_string(value);
-                                            new_el.insert_attribute(&mut txn, key.as_str(), str_val);
+                                            new_el.insert_attribute(txn, key.as_str(), str_val);
                                         }
                                     }
 
                                     // Re-insert gap children into new wrapper
-                                    rebuild_children(&mut txn, &new_el, &gap_children);
+                                    rebuild_children(txn, &new_el, &gap_children);
                                 }
                             }
                         } else {
                             // Unwrap: promote the wrapper's children to the parent level
-                            let gap_children = collect_children(&txn, &wrapper_el);
-                            remove_child(&mut txn, &parent, child_index);
+                            let gap_children = collect_children(txn, &wrapper_el);
+                            remove_child(txn, &parent, child_index);
 
                             // Insert children at the wrapper's former position
                             for (i, child_json) in gap_children.iter().enumerate() {
                                 insert_node_from_json(
-                                    &mut txn,
+                                    txn,
                                     &parent,
                                     child_index + i as u32,
                                     child_json,
@@ -220,7 +236,11 @@ impl StepTranslator {
     // AddMarkStep / RemoveMarkStep
     // -----------------------------------------------------------------------
 
-    fn apply_add_mark_step(doc: &Doc, step: &Value) -> Result<(), TranslationError> {
+    fn apply_add_mark_step(
+        txn: &mut yrs::TransactionMut,
+        fragment: &XmlFragmentRef,
+        step: &Value,
+    ) -> Result<(), TranslationError> {
         let from = require_u32(step, "from")?;
         let to = require_u32(step, "to")?;
         let mark = step
@@ -230,15 +250,16 @@ impl StepTranslator {
             .get("type")
             .and_then(|t| t.as_str())
             .ok_or_else(|| TranslationError::MissingField("mark.type".to_string()))?;
-
-        let mut txn = doc.transact_mut();
-        let fragment = txn.get_or_insert_xml_fragment(FRAGMENT_NAME);
 
         // Find text nodes spanning from..to and apply formatting
-        apply_mark_to_range(&mut txn, &fragment, from, to, mark_type, mark.get("attrs"), true)
+        apply_mark_to_range(txn, fragment, from, to, mark_type, mark.get("attrs"), true)
     }
 
-    fn apply_remove_mark_step(doc: &Doc, step: &Value) -> Result<(), TranslationError> {
+    fn apply_remove_mark_step(
+        txn: &mut yrs::TransactionMut,
+        fragment: &XmlFragmentRef,
+        step: &Value,
+    ) -> Result<(), TranslationError> {
         let from = require_u32(step, "from")?;
         let to = require_u32(step, "to")?;
         let mark = step
@@ -249,17 +270,18 @@ impl StepTranslator {
             .and_then(|t| t.as_str())
             .ok_or_else(|| TranslationError::MissingField("mark.type".to_string()))?;
 
-        let mut txn = doc.transact_mut();
-        let fragment = txn.get_or_insert_xml_fragment(FRAGMENT_NAME);
-
-        apply_mark_to_range(&mut txn, &fragment, from, to, mark_type, None, false)
+        apply_mark_to_range(txn, fragment, from, to, mark_type, None, false)
     }
 
     // -----------------------------------------------------------------------
     // AddNodeMarkStep / RemoveNodeMarkStep
     // -----------------------------------------------------------------------
 
-    fn apply_add_node_mark_step(doc: &Doc, step: &Value) -> Result<(), TranslationError> {
+    fn apply_add_node_mark_step(
+        txn: &mut yrs::TransactionMut,
+        fragment: &XmlFragmentRef,
+        step: &Value,
+    ) -> Result<(), TranslationError> {
         let pos = require_u32(step, "pos")?;
         let mark = step
             .get("mark")
@@ -269,26 +291,27 @@ impl StepTranslator {
             .and_then(|t| t.as_str())
             .ok_or_else(|| TranslationError::MissingField("mark.type".to_string()))?;
 
-        let mut txn = doc.transact_mut();
-        let fragment = txn.get_or_insert_xml_fragment(FRAGMENT_NAME);
-
-        let resolved = resolve_position(&txn, &fragment, pos)?;
+        let resolved = resolve_position(txn, fragment, pos)?;
         if let ResolvedPosition::AtNodeBoundary { parent, child_index } = resolved {
-            if let Some(XmlNode::Element(el)) = get_child(&txn, &parent, child_index) {
+            if let Some(XmlNode::Element(el)) = get_child(txn, &parent, child_index) {
                 // Store the mark as an attribute on the element
                 let value = if let Some(attrs) = mark.get("attrs") {
                     serde_json::to_string(attrs).unwrap_or_default()
                 } else {
                     "true".to_string()
                 };
-                el.insert_attribute(&mut txn, mark_type, value);
+                el.insert_attribute(txn, mark_type, value);
             }
         }
 
         Ok(())
     }
 
-    fn apply_remove_node_mark_step(doc: &Doc, step: &Value) -> Result<(), TranslationError> {
+    fn apply_remove_node_mark_step(
+        txn: &mut yrs::TransactionMut,
+        fragment: &XmlFragmentRef,
+        step: &Value,
+    ) -> Result<(), TranslationError> {
         let pos = require_u32(step, "pos")?;
         let mark = step
             .get("mark")
@@ -298,13 +321,10 @@ impl StepTranslator {
             .and_then(|t| t.as_str())
             .ok_or_else(|| TranslationError::MissingField("mark.type".to_string()))?;
 
-        let mut txn = doc.transact_mut();
-        let fragment = txn.get_or_insert_xml_fragment(FRAGMENT_NAME);
-
-        let resolved = resolve_position(&txn, &fragment, pos)?;
+        let resolved = resolve_position(txn, fragment, pos)?;
         if let ResolvedPosition::AtNodeBoundary { parent, child_index } = resolved {
-            if let Some(XmlNode::Element(el)) = get_child(&txn, &parent, child_index) {
-                el.remove_attribute(&mut txn, &mark_type);
+            if let Some(XmlNode::Element(el)) = get_child(txn, &parent, child_index) {
+                el.remove_attribute(txn, &mark_type);
             }
         }
 
@@ -315,7 +335,11 @@ impl StepTranslator {
     // AttrStep
     // -----------------------------------------------------------------------
 
-    fn apply_attr_step(doc: &Doc, step: &Value) -> Result<(), TranslationError> {
+    fn apply_attr_step(
+        txn: &mut yrs::TransactionMut,
+        fragment: &XmlFragmentRef,
+        step: &Value,
+    ) -> Result<(), TranslationError> {
         let pos = require_u32(step, "pos")?;
         let attr = step
             .get("attr")
@@ -323,17 +347,14 @@ impl StepTranslator {
             .ok_or_else(|| TranslationError::MissingField("attr".to_string()))?;
         let value = &step["value"];
 
-        let mut txn = doc.transact_mut();
-        let fragment = txn.get_or_insert_xml_fragment(FRAGMENT_NAME);
-
-        let resolved = resolve_position(&txn, &fragment, pos)?;
+        let resolved = resolve_position(txn, fragment, pos)?;
         if let ResolvedPosition::AtNodeBoundary { parent, child_index } = resolved {
-            if let Some(XmlNode::Element(el)) = get_child(&txn, &parent, child_index) {
+            if let Some(XmlNode::Element(el)) = get_child(txn, &parent, child_index) {
                 if value.is_null() {
-                    el.remove_attribute(&mut txn, &attr);
+                    el.remove_attribute(txn, &attr);
                 } else {
                     let str_val = json_value_to_string(value);
-                    el.insert_attribute(&mut txn, attr, str_val);
+                    el.insert_attribute(txn, attr, str_val);
                 }
             }
         }
@@ -2142,5 +2163,200 @@ mod tests {
             .as_str()
             .unwrap();
         assert_eq!(item2_text, "Third");
+    }
+
+    /// Helper: create a doc with a heading and a paragraph.
+    fn doc_with_heading_and_paragraph(heading_text: &str, para_text: &str) -> Doc {
+        let doc = Doc::new();
+        {
+            let mut txn = doc.transact_mut();
+            let frag = txn.get_or_insert_xml_fragment("default");
+            let heading = frag.insert(&mut txn, 0, XmlElementPrelim::empty("heading"));
+            heading.insert_attribute(&mut txn, "level", "1");
+            let ht = heading.insert(&mut txn, 0, XmlTextPrelim::new(""));
+            ht.push(&mut txn, heading_text);
+            let para = frag.insert(&mut txn, 1, XmlElementPrelim::empty("paragraph"));
+            let pt = para.insert(&mut txn, 0, XmlTextPrelim::new(""));
+            pt.push(&mut txn, para_text);
+        }
+        doc
+    }
+
+    #[test]
+    fn test_insert_text_then_add_marks_via_replace_yrs_content() {
+        // Same scenario as test_insert_text_then_add_marks_reproduces_push_bug,
+        // but uses replace_yrs_content to build the Yrs doc (closer to real usage).
+        let doc = Doc::new();
+        {
+            let mut txn = doc.transact_mut();
+            txn.get_or_insert_xml_fragment("default");
+        }
+        let pm_json = json!({
+            "type": "doc",
+            "content": [
+                {
+                    "type": "heading",
+                    "attrs": { "level": 1 },
+                    "content": [{ "type": "text", "text": "That boy's not right" }]
+                },
+                {
+                    "type": "paragraph",
+                    "content": [{
+                        "type": "text",
+                        "text": "Here come the sprinkles."
+                    }]
+                }
+            ]
+        });
+        super::super::yrs_json::replace_yrs_content(&doc, &pm_json).unwrap();
+
+        // Verify the heading size to make sure positions match
+        {
+            let txn = doc.transact();
+            let frag = txn.get_xml_fragment("default").unwrap();
+            let heading = frag.get(&txn, 0).unwrap().into_xml_element().unwrap();
+            assert_eq!(element_pm_size(&txn, &heading), 22);
+        }
+
+        let steps = vec![
+            json!({
+                "stepType": "replace",
+                "from": 37,
+                "to": 37,
+                "slice": {
+                    "content": [{ "type": "text", "text": "juicy " }]
+                }
+            }),
+            json!({
+                "stepType": "addMark",
+                "mark": { "type": "italic" },
+                "from": 37,
+                "to": 42
+            }),
+            json!({
+                "stepType": "addMark",
+                "mark": { "type": "bold" },
+                "from": 43,
+                "to": 52
+            }),
+        ];
+
+        let result = StepTranslator::apply_steps(&doc, &steps);
+        assert_eq!(result.steps_applied, 3, "All 3 steps should succeed");
+        assert_eq!(result.steps_failed, 0, "No steps should fail");
+
+        let json = extract_json(&doc);
+        let content = json["content"].as_array().unwrap();
+        assert_eq!(content.len(), 2, "Should still have heading + paragraph");
+        assert_eq!(content[0]["type"], "heading");
+        assert_eq!(content[0]["content"][0]["text"], "That boy's not right");
+        assert_eq!(content[1]["type"], "paragraph");
+
+        let para_content = content[1]["content"].as_array().unwrap();
+        let full_text: String = para_content
+            .iter()
+            .filter_map(|n| n["text"].as_str())
+            .collect();
+        assert_eq!(full_text, "Here come the juicy sprinkles.");
+    }
+
+    #[test]
+    fn test_insert_text_then_add_marks_reproduces_push_bug() {
+        // Reproduces the bug from PR 05 manual testing:
+        //   Original: "# That boy's not right\n\nHere come the sprinkles."
+        //   Edited:   "# That boy's not right\n\nHere come the *juicy* **sprinkles**."
+        //
+        // The sidecar generates these steps:
+        //   1. replace from:37 to:37 insert "juicy "
+        //   2. addMark italic from:37 to:42
+        //   3. addMark bold from:43 to:52
+        let doc = doc_with_heading_and_paragraph(
+            "That boy's not right",
+            "Here come the sprinkles.",
+        );
+
+        // Verify initial positions:
+        // heading: open(0) + "That boy's not right"(20 chars, pos 1-20) + close(21) = size 22
+        // paragraph: open(22) + text starts at pos 23
+        // "Here come the " = 14 chars → pos 23-36
+        // "sprinkles." starts at pos 37
+        {
+            let txn = doc.transact();
+            let frag = txn.get_xml_fragment("default").unwrap();
+            let heading = frag.get(&txn, 0).unwrap().into_xml_element().unwrap();
+            assert_eq!(element_pm_size(&txn, &heading), 22);
+        }
+
+        let steps = vec![
+            json!({
+                "stepType": "replace",
+                "from": 37,
+                "to": 37,
+                "slice": {
+                    "content": [{ "type": "text", "text": "juicy " }]
+                }
+            }),
+            json!({
+                "stepType": "addMark",
+                "mark": { "type": "italic" },
+                "from": 37,
+                "to": 42
+            }),
+            json!({
+                "stepType": "addMark",
+                "mark": { "type": "bold" },
+                "from": 43,
+                "to": 52
+            }),
+        ];
+
+        let result = StepTranslator::apply_steps(&doc, &steps);
+        assert_eq!(result.steps_applied, 3, "All 3 steps should succeed");
+        assert_eq!(result.steps_failed, 0, "No steps should fail");
+
+        let json = extract_json(&doc);
+
+        // The document should still have 2 top-level nodes
+        let content = json["content"].as_array().unwrap();
+        assert_eq!(content.len(), 2, "Should still have heading + paragraph");
+
+        // Heading should be unchanged and first
+        assert_eq!(content[0]["type"], "heading");
+        assert_eq!(content[0]["content"][0]["text"], "That boy's not right");
+
+        // Paragraph should have the new text with marks
+        assert_eq!(content[1]["type"], "paragraph");
+        let para_content = content[1]["content"].as_array().unwrap();
+
+        // Collect all text from the paragraph
+        let full_text: String = para_content
+            .iter()
+            .filter_map(|n| n["text"].as_str())
+            .collect();
+        assert_eq!(full_text, "Here come the juicy sprinkles.");
+
+        // Check that "juicy" has italic mark
+        let juicy_node = para_content.iter().find(|n| {
+            n["text"].as_str().map_or(false, |t| t.contains("juicy"))
+        }).expect("Should have a text node containing 'juicy'");
+        assert!(
+            juicy_node["marks"].as_array().map_or(false, |m| {
+                m.iter().any(|mark| mark["type"] == "italic")
+            }),
+            "juicy should have italic mark, got: {:?}",
+            juicy_node
+        );
+
+        // Check that "sprinkles" has bold mark
+        let sprinkles_node = para_content.iter().find(|n| {
+            n["text"].as_str().map_or(false, |t| t.contains("sprinkles"))
+        }).expect("Should have a text node containing 'sprinkles'");
+        assert!(
+            sprinkles_node["marks"].as_array().map_or(false, |m| {
+                m.iter().any(|mark| mark["type"] == "bold")
+            }),
+            "sprinkles should have bold mark, got: {:?}",
+            sprinkles_node
+        );
     }
 }
