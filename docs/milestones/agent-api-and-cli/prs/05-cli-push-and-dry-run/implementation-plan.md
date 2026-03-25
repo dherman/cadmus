@@ -256,12 +256,12 @@ pnpm dev -- push <doc-id> ./test-doc.md
 - [x] `--dry-run` shows colored unified diff without applying
 - [x] `.cadmus/<doc-id>.json` is updated with new version after push
 - [x] Sequential push cycles work (push → edit → push)
-- [ ] Missing checkout metadata shows helpful error
-- [ ] Missing file shows helpful error
-- [ ] Stale base_version shows helpful re-checkout suggestion
-- [ ] Permission errors show clear message
+- [x] Missing checkout metadata shows helpful error
+- [x] Missing file shows helpful error
+- [x] Stale base_version shows helpful re-checkout suggestion
+- [x] Permission errors show clear message
 - [ ] Concurrent edits to different regions merge cleanly
-- [ ] Auto-detection of document ID works from `.cadmus/` metadata
+- [x] Auto-detection of document ID works from `.cadmus/` metadata
 
 ## Files Modified
 
