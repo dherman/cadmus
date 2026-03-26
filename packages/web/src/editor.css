@@ -343,6 +343,38 @@ body {
   max-width: 120px;
 }
 
+/* Agent presence indicator */
+.presence-agent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f0f0f0;
+  font-size: 0.8125rem;
+  color: #374151;
+}
+
+.agent-name {
+  font-weight: 500;
+}
+
+.agent-status {
+  font-size: 0.6875rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Agent cursor in editor (dashed style) */
+.collaboration-cursor[data-agent='true'] {
+  border-left-style: dashed !important;
+  border-left-color: #888 !important;
+}
+
+.collaboration-cursor[data-agent='true'] > .collaboration-cursor-label {
+  background-color: #888 !important;
+}
+
 /* Dashboard layout */
 .dashboard {
   min-height: 100vh;

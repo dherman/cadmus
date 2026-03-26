@@ -18,6 +18,8 @@ const COLORS = [
 export interface UserIdentity {
   name: string;
   color: string;
+  isAgent?: boolean;
+  agentStatus?: string | null;
 }
 
 function hashCode(str: string): number {
