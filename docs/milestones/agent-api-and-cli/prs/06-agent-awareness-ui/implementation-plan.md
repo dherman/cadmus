@@ -167,11 +167,11 @@ wscat -c "ws://localhost:8080/api/docs/{doc-id}/ws?token=cadmus_..."
 
 ## Files Modified
 
-| File                                                  | Change                                               |
-| ----------------------------------------------------- | ---------------------------------------------------- |
-| `packages/web/src/Presence.tsx`                       | Render agent presence with bot icon and status text   |
-| `packages/web/src/BotIcon.tsx`                        | New SVG bot icon component                           |
-| `packages/web/src/collaboration-cursor-extension.ts`  | Add isAgent/agentStatus to user type                 |
-| `packages/web/src/cursor-renderer.ts`                 | Agent cursor: dashed style, muted color, bot label   |
-| `packages/web/src/user-identity.ts`                   | Add isAgent/agentStatus to UserIdentity interface    |
-| `packages/web/src/editor.css`                         | Add agent presence and cursor styles                 |
+| File                                                 | Change                                              |
+| ---------------------------------------------------- | --------------------------------------------------- |
+| `packages/web/src/Presence.tsx`                      | Render agent presence with bot icon and status text |
+| `packages/web/src/BotIcon.tsx`                       | New SVG bot icon component                          |
+| `packages/web/src/collaboration-cursor-extension.ts` | Add isAgent/agentStatus to user type                |
+| `packages/web/src/cursor-renderer.ts`                | Agent cursor: dashed style, muted color, bot label  |
+| `packages/web/src/user-identity.ts`                  | Add isAgent/agentStatus to UserIdentity interface   |
+| `packages/web/src/editor.css`                        | Add agent presence and cursor styles                |
